@@ -1,0 +1,68 @@
+@import "bootstrap/scss/bootstrap.scss";
+
+:root {
+  --bgColorGreen: #1ebea5;
+  --bgColorGrey: #dfdfdf;
+  --bgColorCyan: #f2e6d9;
+}
+
+.h-100 {
+  min-height: 100vh !important;
+  max-height: 100% !important;
+}
+
+.fill {
+  min-height: 90vh !important;
+  height: 90vh !important;
+  max-height: 100% !important;
+
+  @media (max-width: 767px) {
+    min-height: 50vh !important;
+    height: 50vh !important;
+    max-height: 100% !important;
+  }
+}
+
+.w-con {
+  width: fit-content;
+}
+
+.bg-green {
+  background-color: var(--bgColorGreen);
+}
+
+.bg-grey {
+  background-color: var(--bgColorGrey);
+}
+
+.bg-cyan {
+  background-color: var(--bgColorCyan);
+}
+
+.rounded {
+  border-radius: 8px !important;
+}
+
+.userInfoImage {
+  width: 20%;
+  clip-path: circle(36%);
+}
+
+.chatUserInfoImage {
+  width: 7%;
+  clip-path: circle(38%);
+}
+
+.chatUser:hover {
+  cursor: pointer;
+  background-color: #f5f5f5;
+}
+
+.chatUsersImg {
+  width: 10%;
+  clip-path: circle(38%);
+}
+
+.pointer:hover {
+  cursor: pointer;
+}
