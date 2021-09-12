@@ -21,12 +21,9 @@ const ChatScreen = () => {
 
     useEffect(() => {
         return () => {
-            console.log(24);
             socketRef.current.disconnect();
-            socketRef.current.close();
-            history.goBack();
+            socketRef.current = null;
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -37,12 +34,10 @@ const ChatScreen = () => {
 
         // We show logged in users in the panel
         socketRef.current.on('logged-in-users', loggedInUsrs => {
-            console.log(40);
             setLoggedInUsers(loggedInUsrs);
         });
 
         socketRef.current.on('new-logged-in-user', newLoggedInUsr => {
-            console.log(45);
             let found = false;
 
             loggedInUsers.forEach(usr => {
@@ -55,20 +50,19 @@ const ChatScreen = () => {
         });
 
         // User logs out
-        socketRef.current.on('logout', loggedInUsrs => {
-            console.log(loggedInUsrs);
-            setLoggedInUsers(loggedInUsrs);
-            // setLoggedInUsers([...loggedInUsers, loggedInUser]);
+        socketRef.current.on('logout', userLoggedOut => {
+            setLoggedInUsers(curr => curr.filter(usr => usr.id !== userLoggedOut.id));
+            console.log(loggedInUsers);
         });
 
         // User disconnects
         socketRef.current.on('user-disconnected', loggedInUsrs => {
-            console.log(66);
+            console.log(62);
             setLoggedInUsers(loggedInUsrs);
         });
 
-        socketRef.current.on('receive-message', (message, user) => {
-            setMessages([...messages, { ...user, message }]);
+        socketRef.current.on('receive-message', (message, usr) => {
+            setMessages([...messages, { ...usr, message }]);
         });
     }, [loggedInUsers, messages, user]);
 

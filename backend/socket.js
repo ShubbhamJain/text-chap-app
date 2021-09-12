@@ -16,7 +16,6 @@ io.on('connection', (socket) => {
                     return usr.socketId = socket.id;
                 }
             });
-            console.log(13);
             await User.updateOne({ _id: loggedInUserId }, { $set: { active: true } });
             socket.emit('logged-in-users', loggedInUsers);
         }
@@ -33,7 +32,6 @@ io.on('connection', (socket) => {
         }
 
         if (loggedInUsers.length === 0) {
-            console.log(24);
             loggedInUsers.push(obj);
             socket.emit('logged-in-users', loggedInUsers);
         } else {
@@ -57,33 +55,45 @@ io.on('connection', (socket) => {
     });
 
     socket.on('user-logged-out', async loggedOutUser => {
+        let userLoggedOut;
+        await User.updateOne({ _id: loggedOutUser.id }, { $set: { loggedIn: false, active: false } });
         loggedInUsers.forEach((usr, index) => {
             if (usr.id == loggedOutUser.id) {
+                userLoggedOut = usr;
                 loggedInUsers.splice(index, 1);
             }
         });
 
-        io.emit('logout', loggedInUsers);
+        socket.broadcast.emit('logout', userLoggedOut);
+        socket.disconnect(true);
     });
 
     socket.on('disconnect', () => {
-        console.log(64);
         loggedInUsers.forEach(async (usr, index) => {
             if (usr.socketId == socket.id) {
-                console.log(73);
                 await User.updateOne({ _id: usr.id }, { $set: { active: false } });
                 usr.active = false;
             }
         });
 
-        // setTimeout(() => {
-        //     loggedInUsers.forEach((usr, index) => {
-        //         if (usr.socketId == socket.id && usr.active === false) {
-        //             loggedInUsers.splice(index, 1);
-        //         }
-        //     });
-        //     io.emit('user-disconnected', loggedInUsers);
-        // }, 3000);
+        setTimeout(async () => {
+            let disconnectedUser;
+            let disconnectedUserIndex;
+            loggedInUsers.forEach((usr, index) => {
+                if (usr.socketId == socket.id && usr.active === false) {
+                    disconnectedUser = usr;
+                    disconnectedUserIndex = index;
+                }
+            });
+
+            if (disconnectedUser) {
+                const user = await User.findOne({ _id: disconnectedUser.id });
+                if (user.active === false) {
+                    loggedInUsers.splice(disconnectedUserIndex, 1);
+                    io.emit('user-disconnected', loggedInUsers);
+                }
+            }
+        }, 3000);
     });
 });
 
