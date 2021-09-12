@@ -25,7 +25,11 @@ const User = new mongoose.Schema({
     },
     loggedIn: {
         type: Boolean,
-        required: true
+        required: true,
+    },
+    active: {
+        type: Boolean,
+        default: false
     }
 });
 

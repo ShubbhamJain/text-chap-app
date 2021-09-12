@@ -5,48 +5,49 @@ const User = require('./models/users');
 let loggedInUsers = [];
 
 io.on('connection', (socket) => {
-    socket.on('is-page-refreshed', userId => {
-        console.log(userId);
+    socket.on('user-logged-in', async loggedInUserId => {
         let found = false;
+        const user = await User.findOne({ _id: loggedInUserId });
 
-        loggedInUsers.forEach(usr => {
-            if (usr.id == userId) {
-                found = true;
-            }
-        });
-
-        if (found === true) {
-            console.log(17);
-            socket.emit('page-refreshed', loggedInUsers);
+        if (user.active === false) {
+            loggedInUsers.forEach(usr => {
+                if (usr.id == loggedInUserId) {
+                    usr.active = true;
+                    return usr.socketId = socket.id;
+                }
+            });
+            console.log(13);
+            await User.updateOne({ _id: loggedInUserId }, { $set: { active: true } });
+            socket.emit('logged-in-users', loggedInUsers);
         }
-    });
-
-    socket.on('user-logged-in', async loggedInUser => {
-        let found = false;
-        const user = await User.findOne({ _id: loggedInUser.id });
 
         obj = {
-            id: user._id,
+            id: user.id,
             profilePic: user.profilePic,
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
-            loggedIn: user.loggedIn
+            loggedIn: user.loggedIn,
+            socketId: socket.id,
+            active: true
         }
 
         if (loggedInUsers.length === 0) {
+            console.log(24);
             loggedInUsers.push(obj);
-            io.emit("logged-in-users", loggedInUsers);
+            socket.emit('logged-in-users', loggedInUsers);
         } else {
             loggedInUsers.forEach(usr => {
-                if (usr.id == loggedInUser.id) {
-                    found = true;
+                if (usr.id == loggedInUserId) {
+                    return found = true;
                 }
             });
 
             if (found === false) {
+                console.log(35);
                 loggedInUsers.push(obj);
-                io.emit("logged-in-users", loggedInUsers);
+                socket.emit('logged-in-users', loggedInUsers);
+                socket.broadcast.emit('new-logged-in-user', obj);
             }
         }
     });
@@ -54,13 +55,36 @@ io.on('connection', (socket) => {
     socket.on('join room', (message, user) => {
         io.emit('receive-message', message, user);
     });
+
+    socket.on('user-logged-out', async loggedOutUser => {
+        loggedInUsers.forEach((usr, index) => {
+            if (usr.id == loggedOutUser.id) {
+                loggedInUsers.splice(index, 1);
+            }
+        });
+
+        io.emit('logout', loggedInUsers);
+    });
+
+    socket.on('disconnect', () => {
+        console.log(64);
+        loggedInUsers.forEach(async (usr, index) => {
+            if (usr.socketId == socket.id) {
+                console.log(73);
+                await User.updateOne({ _id: usr.id }, { $set: { active: false } });
+                usr.active = false;
+            }
+        });
+
+        // setTimeout(() => {
+        //     loggedInUsers.forEach((usr, index) => {
+        //         if (usr.socketId == socket.id && usr.active === false) {
+        //             loggedInUsers.splice(index, 1);
+        //         }
+        //     });
+        //     io.emit('user-disconnected', loggedInUsers);
+        // }, 3000);
+    });
 });
-/**
- * rooms- {
- *  roomid, userid of user 1, userid of user 2 
- * }
- * 
- * Maintain an array which keps track of logged in users, so when a user logs in 
- */
 
 module.exports = io;

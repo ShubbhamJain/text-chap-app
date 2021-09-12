@@ -20,7 +20,8 @@ router.post('/', validate(loginValidation), async (req, res) => {
 
     if (!isPasswordCorrect) return res.json({ error: true, message: LANG.login.credentialsCheck }).status(400);
 
-    user.loggedIn = true;
+    await User.updateOne({ _id: user.id }, { $set: { loggedIn: true, active: true } });
+    let updatedUser = await User.findOne({ _id: user.id });
 
     jwt.sign(
         { id: user.id },
@@ -29,15 +30,16 @@ router.post('/', validate(loginValidation), async (req, res) => {
         (err, token) => {
             if (err) throw err;
 
-            res.json({
+            return res.json({
                 token,
                 user: {
-                    id: user.id,
-                    profilePic: user.profilePic,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    email: user.email,
-                    loggedIn: user.loggedIn
+                    id: updatedUser.id,
+                    profilePic: updatedUser.profilePic,
+                    firstName: updatedUser.firstName,
+                    lastName: updatedUser.lastName,
+                    email: updatedUser.email,
+                    loggedIn: updatedUser.loggedIn,
+                    active: updatedUser.active
                 }
             });
         }
@@ -54,18 +56,17 @@ router.get('/checkUser', (req, res) => {
     try {
         const decodedData = jwt.verify(token, process.env.JWT_SECRET);
         return decodedData ? res.json(true) : res.json(false);
-    } catch (e) {
-        res.json(e.message);
+    } catch (error) {
+        return res.json({ error: error.message, message: LANG.auth.valid });
     }
 });
 
 router.post('/logout', auth, async (req, res) => {
     try {
-        let user = await User.findOne({ _id: req.user.id });
-        user.loggedIn = false;
-        res.json(true);
+        await User.updateOne({ _id: req.user.id }, { $set: { loggedIn: false, active: false } });
+        return res.json(true);
     } catch (error) {
-        res.json(e.message);
+        return res.json({ error: error.message, message: LANG.auth.valid });
     }
 });
 

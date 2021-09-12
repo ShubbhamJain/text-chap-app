@@ -18,54 +18,93 @@ const ChatScreen = () => {
     const [loggedInUsers, setLoggedInUsers] = useState([]);
 
     const user = getAuthInfo().user;
-    const imgUrl = 'https://images.pexels.com/photos/2726111/pexels-photo-2726111.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500';
 
     useEffect(() => {
-        socketRef.current = io.connect('http://localhost:5000/');
-
-        socketRef.current.emit('user-logged-in', user);
-
-        socketRef.current.on('logged-in-users', loggedInUsers => {
-            setLoggedInUsers(loggedInUsers);
-        });
-
-        socketRef.current.on("reconnect", (attempt) => {
-            console.log(attempt);
-        });
-    }, [user]);
+        return () => {
+            console.log(24);
+            socketRef.current.disconnect();
+            socketRef.current.close();
+            history.goBack();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
+        socketRef.current = io.connect('http://localhost:5000/', { transports: ['websocket'], upgrade: false });
+
+        // When user logs in
+        socketRef.current.emit('user-logged-in', user.id);
+
+        // We show logged in users in the panel
+        socketRef.current.on('logged-in-users', loggedInUsrs => {
+            console.log(40);
+            setLoggedInUsers(loggedInUsrs);
+        });
+
+        socketRef.current.on('new-logged-in-user', newLoggedInUsr => {
+            console.log(45);
+            let found = false;
+
+            loggedInUsers.forEach(usr => {
+                if (newLoggedInUsr.id === usr.id) {
+                    return found = true;
+                }
+            });
+
+            if (found === false) setLoggedInUsers([...loggedInUsers, newLoggedInUsr]);
+        });
+
+        // User logs out
+        socketRef.current.on('logout', loggedInUsrs => {
+            console.log(loggedInUsrs);
+            setLoggedInUsers(loggedInUsrs);
+            // setLoggedInUsers([...loggedInUsers, loggedInUser]);
+        });
+
+        // User disconnects
+        socketRef.current.on('user-disconnected', loggedInUsrs => {
+            console.log(66);
+            setLoggedInUsers(loggedInUsrs);
+        });
+
         socketRef.current.on('receive-message', (message, user) => {
             setMessages([...messages, { ...user, message }]);
         });
-    }, [messages]);
+    }, [loggedInUsers, messages, user]);
 
     const sendMessage = (event) => {
         event.preventDefault();
 
         if (textMessage.current.value) {
-            socketRef.current.emit('join room', textMessage.current.value, user);
+            socketRef.current.emit('join room', textMessage.current.value, userInChat[0].socketId);
             textMessage.current.value = '';
         }
     }
 
     const onClickHandler = (item) => {
         if (item === 'Logout') {
+            socketRef.current.emit('user-logged-out', user);
             clearAuth();
-            history.replace(PATHS.HOME);
+            history.push(PATHS.HOME);
         }
     }
+
+    const setChatUser = ({ profilePic, firstName, lastName, email, socketId }) => {
+        setUserInChat([{ profilePic, firstName, lastName, email, socketId }]);
+        // socketRef.current.emit('join room', textMessage.current.value, user);
+    };
 
     return (
         <div className='container-fluid px-5 h-100'>
             <div className='row justify-content-center py-md-5 h-100'>
                 <div className='col-10 col-md-4 order-2 order-md-1 p-0 fill overflow-auto mt-2 mt-md-0 border h-100'>
                     <div className='sticky-top'>
-                        <UserInfoComp picClass='userInfoImage' profilePic={user.profilePic} onclonClickHandler={onClickHandler} email={user.email} dropDownMenu={userDropDownMenu} >
+                        <UserInfoComp picClass='userInfoImage' profilePic={user.profilePic} onClickHandler={onClickHandler} email={user.email} dropDownMenu={userDropDownMenu} >
                         </UserInfoComp>
                     </div>
 
                     <div>
+                        {console.log(loggedInUsers)}
                         {
                             // eslint-disable-next-line eqeqeq
                             (loggedInUsers.length === 0 || (loggedInUsers.length === 1 && loggedInUsers[0].id == user.id)) ?
@@ -75,7 +114,7 @@ const ChatScreen = () => {
                                     // eslint-disable-next-line eqeqeq
                                     return chatUser.id == user.id ? null :
                                         (
-                                            <ChatUsersComp key={index} picClass='chatUsersImg' profilePic={chatUser.profilePic} firstName={chatUser.firstName} lastName={chatUser.lastName} lastMessageFrom='You' lastMessage='Hello' />
+                                            <ChatUsersComp key={index} picClass='chatUsersImg' profilePic={chatUser.profilePic} firstName={chatUser.firstName} lastName={chatUser.lastName} email={chatUser.email} socketId={chatUser.socketId} setChatUser={setChatUser} lastMessageFrom='You' lastMessage='Hello' />
                                         )
                                 })
                         }
@@ -89,7 +128,7 @@ const ChatScreen = () => {
                             :
                             <>
                                 <div className='sticky-top'>
-                                    <UserInfoComp picClass='chatUserInfoImage' profilePic={imgUrl} onclonClickHandler={onClickHandler} firstName={user.firstName} lastName={user.lastName} email={user.email} dropDownMenu={chatUserDropDownMenu}>
+                                    <UserInfoComp picClass='chatUserInfoImage' profilePic={userInChat[0].profilePic} firstName={userInChat[0].firstName} lastName={userInChat[0].lastName} email={userInChat[0].email} onclinClickHandler={onClickHandler} dropDownMenu={chatUserDropDownMenu}>
                                     </UserInfoComp>
                                 </div>
 

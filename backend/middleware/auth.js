@@ -5,7 +5,7 @@ function auth(req, res, next) {
     const token = req.header("Authorization");
 
     if (!token) {
-        return res.status(401).json({ error: true, message: LANG.auth.noToken });
+        return res.status(200).json({ error: true, message: LANG.auth.noToken });
     }
 
     try {
@@ -13,7 +13,7 @@ function auth(req, res, next) {
         req.user = decoded;
         next();
     } catch (error) {
-        return res.status(401).json({ error: error.message, message: LANG.auth.valid });
+        return res.json({ error: error.message, message: LANG.auth.valid }).status(200);
     }
 }
 

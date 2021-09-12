@@ -20,15 +20,17 @@ function App() {
                             if (isAuthenticated()) return <ChatScreen {...props} />
                             else return <Redirect to={PATHS.LOGIN} />
                         }}
+                    // render={props => <ChatScreen {...props} />}
                     ></Route>
                     <Route exact path={PATHS.REGISTER} render={props => <RegisterComp {...props} />}></Route>
                     <Route
                         exact
                         path={PATHS.LOGIN}
-                        render={(props) => {
-                            if (isAuthenticated()) return <Redirect to={PATHS.CHAT} />
-                            else return <LoginComp {...props} />
-                        }}
+                        // render={(props) => {
+                        //     if (isAuthenticated()) return <Redirect to={PATHS.CHAT} />
+                        //     else return <LoginComp {...props} />
+                        // }}
+                        render={props => <LoginComp {...props} />}
                     ></Route>
                     <Route exact path={PATHS.HOME} render={props => <HomeComp {...props} />}></Route>
                 </Switch>
