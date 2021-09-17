@@ -10,7 +10,7 @@ const Room = new mongoose.Schema({
         required: true
     },
     messages: {
-        type: Object
+        type: Array
     },
 });
 

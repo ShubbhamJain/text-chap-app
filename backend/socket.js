@@ -1,8 +1,10 @@
 const io = require('socket.io')();
 
+const Room = require('./models/rooms');
 const User = require('./models/users');
 
 let loggedInUsers = [];
+let roomData = {};
 
 io.on('connection', (socket) => {
     socket.on('user-logged-in', async loggedInUserId => {
@@ -18,6 +20,7 @@ io.on('connection', (socket) => {
             });
             await User.updateOne({ _id: loggedInUserId }, { $set: { active: true } });
             socket.emit('logged-in-users', loggedInUsers);
+            // send messages that they have to them, when they reload page
         }
 
         obj = {
@@ -50,8 +53,68 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('join room', (message, user) => {
-        io.emit('receive-message', message, user);
+    socket.on('join room', async (message, userId, chatUserId) => {
+        if (message && userId && chatUserId) {
+            let roomDoc = await Room.find({ $or: [{ userOne: userId, userTwo: chatUserId }, { userOne: chatUserId, userTwo: userId }] });
+            let room = roomDoc[0];
+
+            if (room && Object.keys(obj).length !== 0 && obj.constructor === Object) {
+                console.log(62);
+
+                // await room.save();
+                await Room.updateOne({ _id: room.id }, { $push: { 'messages': { [userId]: message } } });
+
+                roomData[room.id].messages.push({ [userId]: message });
+                console.log(roomData);
+
+                let socketId;
+                loggedInUsers.forEach(usr => {
+                    if (usr.id === chatUserId) {
+                        socketId = usr.socketId;
+                    }
+                });
+
+                socket.emit('message-sent', room.id);
+                socket.to(socketId).emit('message-received', room.id, userId, chatUserId, message);
+            } else {
+                try {
+                    console.log(68);
+                    let newRoom = new Room({
+                        userOne: userId,
+                        userTwo: chatUserId,
+                        messages: [{
+                            [userId]: message
+                        }]
+                    });
+
+                    await newRoom.save();
+
+                    roomData[newRoom.id] = {
+                        userOne: newRoom.userOne,
+                        userTwo: newRoom.userTwo,
+                        messages: [{
+                            [userId]: message
+                        }]
+                    }
+
+                    console.log(roomData);
+
+                    let socketId;
+                    loggedInUsers.forEach(usr => {
+                        if (usr.id === chatUserId) {
+                            socketId = usr.socketId;
+                        }
+                    });
+
+                    socket.emit('message-sent', room.id);
+                    socket.to(socketId).emit('message-received', newRoom.id, userId, chatUserId, message);
+                } catch (error) {
+                    socket.emit('error in room creation', 'Error in room creation. Please reload the page and try again');
+                }
+            }
+        } else {
+            socket.emit('error in chating', 'Error in chating. Please reload the page and try again');
+        }
     });
 
     socket.on('user-logged-out', async loggedOutUser => {

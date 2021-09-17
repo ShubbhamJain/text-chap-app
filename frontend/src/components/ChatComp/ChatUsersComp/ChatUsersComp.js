@@ -1,9 +1,9 @@
 import { React } from 'react';
 
-const ChatUsersComp = ({ picClass, profilePic, firstName, lastName, email, socketId, setChatUser, lastMessageFrom, lastMessage, ...props }) => {
+const ChatUsersComp = ({ id, picClass, profilePic, firstName, lastName, email, socketId, setChatUser, lastMessageFrom, lastMessage, ...props }) => {
     return (
         <>
-            <div className='d-flex flex-row align-items-center chatUser' onClick={() => setChatUser({ profilePic, firstName, lastName, email, socketId })}>
+            <div className='d-flex flex-row align-items-center chatUser' onClick={() => setChatUser({ id, profilePic, firstName, lastName, email, socketId })}>
                 <img className={`${picClass} me-3`} src={profilePic} alt='ProfilePic' />
                 <div className='d-flex flex-column'>
                     <h5 className='mb-1'>{firstName} {lastName}</h5>
