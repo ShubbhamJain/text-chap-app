@@ -66,25 +66,20 @@ const ChatScreen = () => {
         });
 
         socketRef.current.on('room created for sender', (rId, rData) => {
-            console.log(roomId, rId, rData);
-
+            // console.log(roomId, rId, rData);
             setRoomData({ ...roomData, [rId]: { ...rData } });
             setRoomId(rId);
         });
 
         socketRef.current.on('room created for receiver', (receiverInChatWithId, rId, rData) => {
-            console.log(roomId, receiverInChatWithId, rId, rData);
-
-            // eslint-disable-next-line eqeqeq
-            if (receiverInChatWithId == rId) {
+            if (receiverInChatWithId === rId) {
                 setRoomData({ ...roomData, [rId]: { ...rData } });
                 setRoomId(receiverInChatWithId);
             }
         });
 
         socketRef.current.on('message received by sender', (rId, msgObj) => {
-            console.log(roomId, rId, msgObj);
-
+            // console.log(roomId, rId, msgObj);
             setRoomData(curr => ({
                 ...curr,
                 [rId]: { ...curr[rId], messages: [...curr[rId].messages, msgObj] }
@@ -93,10 +88,7 @@ const ChatScreen = () => {
         });
 
         socketRef.current.on('message received by receiver', (receiverInChatWithId, rId, msgObj) => {
-            console.log(roomId, receiverInChatWithId, rId, msgObj);
-
-            // eslint-disable-next-line eqeqeq
-            if (receiverInChatWithId == rId) {
+            if (receiverInChatWithId === rId) {
                 setRoomData(curr => ({
                     ...curr,
                     [rId]: { ...curr[rId], messages: [...curr[rId].messages, msgObj] }
@@ -104,55 +96,6 @@ const ChatScreen = () => {
                 setRoomId(receiverInChatWithId);
             }
         });
-
-        // socketRef.current.on('message-sent', (roomId, userId, chatUserId, message) => {
-        //     console.log(Object.keys(roomData).includes(roomId));
-        //     if (Object.keys(roomData).includes(roomId)) {
-        //         console.log(69);
-        //         setRoomData(roomData[roomId]['messages'].push({ userId, message }));
-        //     } else {
-        //         setRoomData({
-        //             ...roomData,
-        //             [roomId]: {
-        //                 userOne: userId,
-        //                 userTwo: chatUserId,
-        //                 messages: [{ userId, message }]
-        //             }
-        //         });
-        //     }
-
-        //     setRoomId(roomId);
-
-        //     console.log(roomData);
-        // });
-
-        // socketRef.current.on('message-received', (rId, rData) => {
-        //     console.log(rId, rData);
-        //     // console.log(roomData);
-        //     // // eslint-disable-next-line eqeqeq
-        //     // const roomExists = Object.keys(roomData).some(room => room == rId);
-        //     // const roomExists2 = roomData.hasOwnProperty(rId);
-        //     // console.log(roomData, rId, roomExists, roomExists2, Object.keys(roomData));
-
-        //     // if (roomExists) {
-        //     //     console.log(91);
-        //     //     setRoomData(...roomData, roomData[rId]['messages'].push({ usrId, message }));
-        //     // } else {
-        //     //     setRoomData({
-        //     //         ...roomData,
-        //     //         [rId]: {
-        //     //             userOne: usrId,
-        //     //             userTwo: chatUsrId,
-        //     //             messages: [{ usrId, message }]
-        //     //         }
-        //     //     });
-        //     // }
-
-        //     setRoomId(rId);
-        //     setRoomData(rData)
-
-        //     // console.log(roomData);
-        // });
     }, [loggedInUsers, roomId, roomData, user]);
 
     const sendMessage = (event) => {
@@ -183,29 +126,21 @@ const ChatScreen = () => {
     const setChatUser = ({ id, profilePic, firstName, lastName, email, socketId }) => {
         setUserInChat([{ id, profilePic, firstName, lastName, email, socketId }]);
 
-        let roomExists = false;
+        let userInRoomAlready = false;
+        let changedRoomId = '';
 
         for (const property in roomData) {
             if ((user.id === roomData[property].userOne && id === roomData[property].userTwo) || (user.id === roomData[property].userTwo && id === roomData[property].userOne)) {
-                if (roomId !== property) {
-                    setRoomId(property);
+                if (roomId === property) {
+                    userInRoomAlready = true;
                 }
-
-                roomExists = true;
+                changedRoomId = property;
             }
         }
 
-        // Object.keys(roomData).forEach(roomId => {
-        //     if ((roomData[roomId].userOne === user.id && roomData[roomId].userTwo === id) || (roomData[roomId].userOne === id && roomData[roomId].userTwo === user.id)) {
-        //         setRoomId(roomId);
-        //     }
-        // });
-
-        // console.log(roomExists);
-
-        if (roomExists === false) {
+        if (userInRoomAlready === false) {
+            setRoomId(changedRoomId);
             socketRef.current.emit('join room', user.id, id);
-            // socketRef.current.emit('join room', user.id, id);
         }
     };
 
@@ -221,12 +156,12 @@ const ChatScreen = () => {
                     <div>
                         {
                             // eslint-disable-next-line eqeqeq
-                            (loggedInUsers.length === 0 || (loggedInUsers.length === 1 && loggedInUsers[0].id == user.id)) ?
+                            (loggedInUsers.length === 0 || (loggedInUsers.length === 1 && loggedInUsers[0].id === user.id)) ?
                                 <p className='text-center fs-4' style={{ marginTop: '50%' }}>No Users available to chat</p>
                                 :
                                 loggedInUsers.map((chatUser, index) => {
                                     // eslint-disable-next-line eqeqeq
-                                    return chatUser.id == user.id ? null :
+                                    return chatUser.id === user.id ? null :
                                         (
                                             <ChatUsersComp key={index} id={chatUser.id} picClass='chatUsersImg' profilePic={chatUser.profilePic} firstName={chatUser.firstName} lastName={chatUser.lastName} email={chatUser.email} socketId={chatUser.socketId} setChatUser={setChatUser} lastMessageFrom='You' lastMessage='Hello' />
                                         )
@@ -247,7 +182,6 @@ const ChatScreen = () => {
                                 </div>
 
                                 <div className='h-75 overflow-scroll'>
-                                    {console.log(roomId)}
                                     {
                                         roomData && roomData[roomId] ?
                                             roomData[roomId].messages.map((message, index) => (
