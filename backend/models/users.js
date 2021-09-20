@@ -30,6 +30,12 @@ const User = new mongoose.Schema({
     active: {
         type: Boolean,
         default: false
+    },
+    inRoom: {
+        type: mongoose.Types.ObjectId
+    },
+    inChatWith: {
+        type: mongoose.Types.ObjectId
     }
 });
 

@@ -14,9 +14,9 @@ const ChatScreen = () => {
     const socketRef = useRef(null);
 
     const [userInChat, setUserInChat] = useState([]);
-    const [message, setMessage] = useState(null);
     const [loggedInUsers, setLoggedInUsers] = useState([]);
     const [roomData, setRoomData] = useState({});
+    const [roomId, setRoomId] = useState('');
 
     const user = getAuthInfo().user;
 
@@ -24,6 +24,9 @@ const ChatScreen = () => {
         return () => {
             socketRef.current.disconnect();
             socketRef.current = null;
+            setUserInChat([]);
+            setLoggedInUsers([]);
+            setRoomData([]);
         }
     }, []);
 
@@ -59,64 +62,112 @@ const ChatScreen = () => {
 
         // User disconnects
         socketRef.current.on('user-disconnected', loggedInUsrs => {
-            console.log(62);
             setLoggedInUsers(loggedInUsrs);
         });
 
-        socketRef.current.on('message-sent', roomId => {
-            console.log(roomId);
+        socketRef.current.on('room created for sender', (rId, rData) => {
+            console.log(roomId, rId, rData);
 
-            if (Object.keys(roomData).includes(roomId)) {
-                setRoomData(curr => curr[roomId]['messages'].push({ [user.id]: message.messageSent }));
-            } else {
-                setRoomData({
-                    ...roomData,
-                    [roomId]: {
-                        userOne: user.id,
-                        userTwo: message.chatUserId,
-                        messages: [{
-                            [user.id]: message.messageSent
-                        }]
-                    }
-                });
-            }
-
-            console.log(roomData);
+            setRoomData({ ...roomData, [rId]: { ...rData } });
+            setRoomId(rId);
         });
 
-        socketRef.current.on('message-received', (roomId, userId, chatUserId, message) => {
-            console.log(roomId, userId, chatUserId, message); //roomId, userId, userId2, messages(Array) -> { userId: message }
+        socketRef.current.on('room created for receiver', (receiverInChatWithId, rId, rData) => {
+            console.log(roomId, receiverInChatWithId, rId, rData);
 
-            if (Object.keys(roomData).includes(roomId)) {
-                setRoomData(curr => curr[roomId]['messages'].push({ userId: message }));
-            } else {
-                setRoomData({
-                    ...roomData,
-                    [roomId]: {
-                        userOne: userId,
-                        userTwo: chatUserId,
-                        messages: [{
-                            [userId]: message
-                        }]
-                    }
-                });
+            // eslint-disable-next-line eqeqeq
+            if (receiverInChatWithId == rId) {
+                setRoomData({ ...roomData, [rId]: { ...rData } });
+                setRoomId(receiverInChatWithId);
             }
-
-            console.log(roomData);
         });
 
-        // user receives a message from private chat
-        // socketRef.current.on('receive-message', (message, usr) => {
-        //     setMessages([...messages, { ...usr, message }]);
+        socketRef.current.on('message received by sender', (rId, msgObj) => {
+            console.log(roomId, rId, msgObj);
+
+            setRoomData(curr => ({
+                ...curr,
+                [rId]: { ...curr[rId], messages: [...curr[rId].messages, msgObj] }
+            }));
+            setRoomId(rId);
+        });
+
+        socketRef.current.on('message received by receiver', (receiverInChatWithId, rId, msgObj) => {
+            console.log(roomId, receiverInChatWithId, rId, msgObj);
+
+            // eslint-disable-next-line eqeqeq
+            if (receiverInChatWithId == rId) {
+                setRoomData(curr => ({
+                    ...curr,
+                    [rId]: { ...curr[rId], messages: [...curr[rId].messages, msgObj] }
+                }));
+                setRoomId(receiverInChatWithId);
+            }
+        });
+
+        // socketRef.current.on('message-sent', (roomId, userId, chatUserId, message) => {
+        //     console.log(Object.keys(roomData).includes(roomId));
+        //     if (Object.keys(roomData).includes(roomId)) {
+        //         console.log(69);
+        //         setRoomData(roomData[roomId]['messages'].push({ userId, message }));
+        //     } else {
+        //         setRoomData({
+        //             ...roomData,
+        //             [roomId]: {
+        //                 userOne: userId,
+        //                 userTwo: chatUserId,
+        //                 messages: [{ userId, message }]
+        //             }
+        //         });
+        //     }
+
+        //     setRoomId(roomId);
+
+        //     console.log(roomData);
         // });
-    }, [loggedInUsers, message, roomData, user]);
+
+        // socketRef.current.on('message-received', (rId, rData) => {
+        //     console.log(rId, rData);
+        //     // console.log(roomData);
+        //     // // eslint-disable-next-line eqeqeq
+        //     // const roomExists = Object.keys(roomData).some(room => room == rId);
+        //     // const roomExists2 = roomData.hasOwnProperty(rId);
+        //     // console.log(roomData, rId, roomExists, roomExists2, Object.keys(roomData));
+
+        //     // if (roomExists) {
+        //     //     console.log(91);
+        //     //     setRoomData(...roomData, roomData[rId]['messages'].push({ usrId, message }));
+        //     // } else {
+        //     //     setRoomData({
+        //     //         ...roomData,
+        //     //         [rId]: {
+        //     //             userOne: usrId,
+        //     //             userTwo: chatUsrId,
+        //     //             messages: [{ usrId, message }]
+        //     //         }
+        //     //     });
+        //     // }
+
+        //     setRoomId(rId);
+        //     setRoomData(rData)
+
+        //     // console.log(roomData);
+        // });
+    }, [loggedInUsers, roomId, roomData, user]);
 
     const sendMessage = (event) => {
         event.preventDefault();
 
         if (textMessage.current.value) {
-            setMessage({ chatUserId: [userInChat[0].id], messageSent: textMessage.current.value });
-            socketRef.current.emit('join room', textMessage.current.value, user.id, userInChat[0].id);
+            let roomID;
+
+            for (const property in roomData) {
+                if ((user.id === roomData[property].userOne && userInChat[0].id === roomData[property].userTwo) || (user.id === roomData[property].userTwo && userInChat[0].id === roomData[property].userOne)) {
+                    roomID = property;
+                }
+            }
+
+            socketRef.current.emit('message sent', textMessage.current.value, roomID, user.id, userInChat[0].id);
             textMessage.current.value = '';
         }
     }
@@ -131,7 +182,31 @@ const ChatScreen = () => {
 
     const setChatUser = ({ id, profilePic, firstName, lastName, email, socketId }) => {
         setUserInChat([{ id, profilePic, firstName, lastName, email, socketId }]);
-        // socketRef.current.emit('join room', textMessage.current.value, user);
+
+        let roomExists = false;
+
+        for (const property in roomData) {
+            if ((user.id === roomData[property].userOne && id === roomData[property].userTwo) || (user.id === roomData[property].userTwo && id === roomData[property].userOne)) {
+                if (roomId !== property) {
+                    setRoomId(property);
+                }
+
+                roomExists = true;
+            }
+        }
+
+        // Object.keys(roomData).forEach(roomId => {
+        //     if ((roomData[roomId].userOne === user.id && roomData[roomId].userTwo === id) || (roomData[roomId].userOne === id && roomData[roomId].userTwo === user.id)) {
+        //         setRoomId(roomId);
+        //     }
+        // });
+
+        // console.log(roomExists);
+
+        if (roomExists === false) {
+            socketRef.current.emit('join room', user.id, id);
+            // socketRef.current.emit('join room', user.id, id);
+        }
     };
 
     return (
@@ -172,16 +247,17 @@ const ChatScreen = () => {
                                 </div>
 
                                 <div className='h-75 overflow-scroll'>
-                                    {console.log(roomData)}
+                                    {console.log(roomId)}
                                     {
-                                        // messages.map((message, index) => (
-                                        //     <div className={message.id === user.id ? 'm-2 d-flex justify-content-end' : 'm-2'} key={index}>
-                                        //         <div key={index} className='bg-white rounded w-con p-2 pe-4'>
-                                        //             <p className='m-0 text-primary'>{message.id === user.id ? 'Me' : message.firstName}</p>
-                                        //             <p className='m-0'>{message.message}</p>
-                                        //         </div>
-                                        //     </div>
-                                        // ))
+                                        roomData && roomData[roomId] ?
+                                            roomData[roomId].messages.map((message, index) => (
+                                                <div className={message.userId === user.id ? 'm-2 d-flex justify-content-end' : 'm-2'} key={index}>
+                                                    <div className='bg-white rounded w-con p-2 pe-4'>
+                                                        <p className='m-0 text-primary'>{message.userId === user.id ? 'Me' : userInChat[0].firstName}</p>
+                                                        <p className='m-0'>{message.message}</p>
+                                                    </div>
+                                                </div>
+                                            )) : null
                                     }
                                 </div>
 
