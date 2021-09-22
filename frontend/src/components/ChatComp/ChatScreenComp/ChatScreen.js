@@ -66,7 +66,6 @@ const ChatScreen = () => {
         });
 
         socketRef.current.on('room created for sender', (rId, rData) => {
-            // console.log(roomId, rId, rData);
             setRoomData({ ...roomData, [rId]: { ...rData } });
             setRoomId(rId);
         });
@@ -79,7 +78,6 @@ const ChatScreen = () => {
         });
 
         socketRef.current.on('message received by sender', (rId, msgObj) => {
-            // console.log(roomId, rId, msgObj);
             setRoomData(curr => ({
                 ...curr,
                 [rId]: { ...curr[rId], messages: [...curr[rId].messages, msgObj] }
@@ -96,7 +94,37 @@ const ChatScreen = () => {
                 setRoomId(receiverInChatWithId);
             }
         });
+
+        socketRef.current.on('error in chating', msg => {
+            console.log(msg);
+        });
+
+        socketRef.current.on('error', (error) => {
+            console.log(error);
+        });
     }, [loggedInUsers, roomId, roomData, user]);
+
+    const setChatUser = ({ id, profilePic, firstName, lastName, email, socketId }) => {
+        setUserInChat([{ id, profilePic, firstName, lastName, email, socketId }]);
+
+        let userInRoomAlready = false;
+        let changedRoomId = '';
+
+        for (const property in roomData) {
+            if ((user.id === roomData[property].userOne && id === roomData[property].userTwo) ||
+                (user.id === roomData[property].userTwo && id === roomData[property].userOne)) {
+                if (roomId === property) {
+                    userInRoomAlready = true;
+                }
+                changedRoomId = property;
+            }
+        }
+
+        if (userInRoomAlready === false) {
+            setRoomId(changedRoomId);
+            socketRef.current.emit('join room', user.id, id);
+        }
+    };
 
     const sendMessage = (event) => {
         event.preventDefault();
@@ -105,7 +133,8 @@ const ChatScreen = () => {
             let roomID;
 
             for (const property in roomData) {
-                if ((user.id === roomData[property].userOne && userInChat[0].id === roomData[property].userTwo) || (user.id === roomData[property].userTwo && userInChat[0].id === roomData[property].userOne)) {
+                if ((user.id === roomData[property].userOne && userInChat[0].id === roomData[property].userTwo) ||
+                    (user.id === roomData[property].userTwo && userInChat[0].id === roomData[property].userOne)) {
                     roomID = property;
                 }
             }
@@ -123,47 +152,29 @@ const ChatScreen = () => {
         }
     }
 
-    const setChatUser = ({ id, profilePic, firstName, lastName, email, socketId }) => {
-        setUserInChat([{ id, profilePic, firstName, lastName, email, socketId }]);
-
-        let userInRoomAlready = false;
-        let changedRoomId = '';
-
-        for (const property in roomData) {
-            if ((user.id === roomData[property].userOne && id === roomData[property].userTwo) || (user.id === roomData[property].userTwo && id === roomData[property].userOne)) {
-                if (roomId === property) {
-                    userInRoomAlready = true;
-                }
-                changedRoomId = property;
-            }
-        }
-
-        if (userInRoomAlready === false) {
-            setRoomId(changedRoomId);
-            socketRef.current.emit('join room', user.id, id);
-        }
-    };
-
     return (
         <div className='container-fluid px-5 h-100'>
             <div className='row justify-content-center py-md-5 h-100'>
                 <div className='col-10 col-md-4 order-2 order-md-1 p-0 fill overflow-auto mt-2 mt-md-0 border h-100'>
                     <div className='sticky-top'>
-                        <UserInfoComp picClass='userInfoImage' profilePic={user.profilePic} onClickHandler={onClickHandler} email={user.email} dropDownMenu={userDropDownMenu} >
+                        <UserInfoComp picClass='userInfoImage' profilePic={user.profilePic}
+                            onClickHandler={onClickHandler} email={user.email} dropDownMenu={userDropDownMenu}
+                        >
                         </UserInfoComp>
                     </div>
 
                     <div>
                         {
-                            // eslint-disable-next-line eqeqeq
                             (loggedInUsers.length === 0 || (loggedInUsers.length === 1 && loggedInUsers[0].id === user.id)) ?
                                 <p className='text-center fs-4' style={{ marginTop: '50%' }}>No Users available to chat</p>
                                 :
                                 loggedInUsers.map((chatUser, index) => {
-                                    // eslint-disable-next-line eqeqeq
                                     return chatUser.id === user.id ? null :
                                         (
-                                            <ChatUsersComp key={index} id={chatUser.id} picClass='chatUsersImg' profilePic={chatUser.profilePic} firstName={chatUser.firstName} lastName={chatUser.lastName} email={chatUser.email} socketId={chatUser.socketId} setChatUser={setChatUser} lastMessageFrom='You' lastMessage='Hello' />
+                                            <ChatUsersComp key={index} id={chatUser.id} picClass='chatUsersImg' profilePic={chatUser.profilePic}
+                                                firstName={chatUser.firstName} lastName={chatUser.lastName} email={chatUser.email} socketId={chatUser.socketId}
+                                                setChatUser={setChatUser} lastMessageFrom='You' lastMessage='Hello'
+                                            />
                                         )
                                 })
                         }
@@ -177,7 +188,9 @@ const ChatScreen = () => {
                             :
                             <>
                                 <div className='sticky-top'>
-                                    <UserInfoComp picClass='chatUserInfoImage' profilePic={userInChat[0].profilePic} firstName={userInChat[0].firstName} lastName={userInChat[0].lastName} email={userInChat[0].email} onclinClickHandler={onClickHandler} dropDownMenu={chatUserDropDownMenu}>
+                                    <UserInfoComp picClass='chatUserInfoImage' profilePic={userInChat[0].profilePic}
+                                        firstName={userInChat[0].firstName} lastName={userInChat[0].lastName} email={userInChat[0].email}
+                                        onclinClickHandler={onClickHandler} dropDownMenu={chatUserDropDownMenu}>
                                     </UserInfoComp>
                                 </div>
 
