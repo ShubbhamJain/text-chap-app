@@ -8,47 +8,53 @@ let roomData = {};
 
 io.on('connection', (socket) => {
     socket.on('user-logged-in', async loggedInUserId => {
-        let found = false;
-        const user = await User.findOne({ _id: loggedInUserId });
+        try {
+            let found = false;
+            const user = await User.findOne({ _id: loggedInUserId });
 
-        if (user.active === false) {
-            loggedInUsers.forEach(usr => {
-                if (usr.id === loggedInUserId) {
-                    usr.active = true;
-                    return usr.socketId = socket.id;
-                }
-            });
-            await User.updateOne({ _id: loggedInUserId }, { $set: { active: true } });
-            socket.emit('logged-in-users', loggedInUsers);
-        }
+            if (user && user?.active === false) {
+                loggedInUsers.forEach(usr => {
+                    if (usr.id === loggedInUserId) {
+                        usr.active = true;
+                        return usr.socketId = socket.id;
+                    }
+                });
+                await User.updateOne({ _id: loggedInUserId }, { $set: { active: true } });
+                socket.emit('logged-in-users', loggedInUsers);
+            }
 
-        obj = {
-            id: user.id,
-            profilePic: user.profilePic,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            loggedIn: user.loggedIn,
-            socketId: socket.id,
-            active: true
-        }
+            obj = {
+                id: user.id,
+                profilePic: user.profilePic,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                loggedIn: user.loggedIn,
+                socketId: socket.id,
+                active: true,
+                inRoom: '',
+                inChatWith: '',
+                notifications: user.notifications
+            }
 
-        if (loggedInUsers.length === 0) {
-            loggedInUsers.push(obj);
-            socket.emit('logged-in-users', loggedInUsers);
-        } else {
-            loggedInUsers.forEach(usr => {
-                if (usr.id === loggedInUserId) {
-                    return found = true;
-                }
-            });
-
-            if (found === false) {
-                console.log(35);
+            if (loggedInUsers.length === 0) {
                 loggedInUsers.push(obj);
                 socket.emit('logged-in-users', loggedInUsers);
-                socket.broadcast.emit('new-logged-in-user', obj);
+            } else {
+                loggedInUsers.forEach(usr => {
+                    if (usr.id === loggedInUserId) {
+                        return found = true;
+                    }
+                });
+
+                if (found === false) {
+                    loggedInUsers.push(obj);
+                    socket.emit('logged-in-users', loggedInUsers);
+                    socket.broadcast.emit('new-logged-in-user', obj);
+                }
             }
+        } catch (error) {
+            socket.emit('error in chating', 'Error in chating. Please reload the page and try again');
         }
     });
 
@@ -75,11 +81,35 @@ io.on('connection', (socket) => {
                     messages: room.messages
                 };
 
-                await User.findByIdAndUpdate(userId, { $set: { inRoom: room.id, inChatWith: chatUserId } });
+                const usr = await User.findById(userId);
 
-                socket.emit('room created for sender', room.id, roomData[room.id]);
+                // already created room, checking if user has any notification from the other user,
+                // if yes, we remove the other user's id from user's notifications array
+                if (usr.notifications.indexOf(chatUserId) >= 0) {
+                    await User.findByIdAndUpdate(userId, { $set: { inRoom: room.id, inChatWith: chatUserId }, $pull: { notifications: chatUserId } });
 
-                socket.to(socketId).emit('room created for receiver', receiverInChat, room.id, roomData[room.id]);
+                    loggedInUsers.forEach(usr => {
+                        if (usr.id === userId) {
+                            usr.inRoom = room.id;
+                            usr.inChatWith = chatUserId;
+                            usr.notifications.splice(chatUserId, 1);
+                        }
+                    });
+
+                } else {
+                    await User.findByIdAndUpdate(userId, { $set: { inRoom: room.id, inChatWith: chatUserId } });
+
+                    loggedInUsers.forEach(usr => {
+                        if (usr.id === userId) {
+                            usr.inRoom = room.id;
+                            usr.inChatWith = chatUserId;
+                        }
+                    });
+                }
+
+                socket.emit('room created for sender', room.id, roomData[room.id], loggedInUsers);
+
+                socket.to(socketId).emit('room created for receiver', receiverInChat, room.id, roomData[room.id], loggedInUsers);
             } else {
                 let newRoom = new Room({
                     userOne: userId,
@@ -96,9 +126,16 @@ io.on('connection', (socket) => {
 
                 await User.findByIdAndUpdate(userId, { $set: { inRoom: newRoom.id, inChatWith: chatUserId } });
 
-                socket.emit('room created for sender', newRoom.id, roomData[newRoom.id]);
+                loggedInUsers.forEach(usr => {
+                    if (usr.id === userId) {
+                        usr.inRoom = newRoom.id;
+                        usr.inChatWith = chatUserId;
+                    }
+                });
 
-                socket.to(socketId).emit('room created for receiver', receiverInChat, newRoom.id, roomData[newRoom.id]);
+                socket.emit('room created for sender', newRoom.id, roomData[newRoom.id], loggedInUsers);
+
+                socket.to(socketId).emit('room created for receiver', receiverInChat, newRoom.id, roomData[newRoom.id], loggedInUsers);
             }
         } else {
             socket.emit('error in chating', 'Error in chating. Please reload the page and try again');
@@ -123,10 +160,23 @@ io.on('connection', (socket) => {
             const senderData = await User.findById(usrId);
             const receiverData = await User.findById(chatUsrId);
 
-            const receiverInChat = receiverData.inRoom ? receiverData.inRoom : '';
+            const receiverInChat = receiverData.inRoom ? receiverData.inRoom.toString() : '';
+
+            //pushing sender's id into receivers data for notification if user is not already in the chat room
+            if (receiverInChat !== roomID) {
+                if (!receiverData.notifications.includes(usrId)) {
+                    await User.findByIdAndUpdate(chatUsrId, { $push: { notifications: usrId } });
+
+                    loggedInUsers.forEach(usr => {
+                        if (usr.id === chatUsrId) {
+                            usr.notifications.push(usrId);
+                        }
+                    });
+                }
+            }
 
             socket.emit('message received by sender', senderData.inRoom, msgObj);
-            socket.to(socketId).emit('message received by receiver', receiverInChat, senderData.inRoom, msgObj);
+            socket.to(socketId).emit('message received by receiver', receiverInChat, senderData.inRoom, msgObj, loggedInUsers);
         } else {
             socket.emit('error in chating', 'Error in chating. Please reload the page and try again');
         }
@@ -134,7 +184,7 @@ io.on('connection', (socket) => {
 
     socket.on('user-logged-out', async loggedOutUser => {
         let userLoggedOut;
-        await User.updateOne({ _id: loggedOutUser.id }, { $set: { loggedIn: false, active: false } });
+        await User.updateOne({ _id: loggedOutUser.id }, { $set: { loggedIn: false, active: false }, $unset: { inRoom: '', inChatWith: '' } });
         loggedInUsers.forEach((usr, index) => {
             if (usr.id === loggedOutUser.id) {
                 userLoggedOut = usr;
@@ -149,7 +199,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         loggedInUsers.forEach(async (usr, index) => {
             if (usr.socketId === socket.id) {
-                await User.updateOne({ _id: usr.id }, { $set: { active: false } });
+                await User.updateOne({ _id: usr.id }, { $set: { active: false }, $unset: { inRoom: '', inChatWith: '' } });
                 usr.active = false;
             }
         });

@@ -63,7 +63,7 @@ router.get('/checkUser', (req, res) => {
 
 router.post('/logout', auth, async (req, res) => {
     try {
-        await User.updateOne({ _id: req.user.id }, { $set: { loggedIn: false, active: false } });
+        await User.updateOne({ _id: req.user.id }, { $set: { loggedIn: false, active: false }, $unset: { inRoom: '', inChatWith: '' } });
         return res.json(true);
     } catch (error) {
         return res.json({ error: error.message, message: LANG.auth.valid });

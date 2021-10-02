@@ -1,4 +1,4 @@
-import { PATHS } from "../config"
+import { PATHS } from "../config";
 import { logoutCall } from "../config/apiCalls";
 
 export const errorMsgClass = 'mb-4 d-block text-danger border border-danger rounded py-2 text-center bg-danger bg-opacity-10';
@@ -27,7 +27,35 @@ export const passwordError = (
 )
 
 export const userDropDownMenu = ['Logout'];
-export const chatUserDropDownMenu = ['Details']
+export const chatUserDropDownMenu = ['Details'];
+
+export const successToastStyles = {
+    backgroundColor: '#fff',
+    color: '#5cb85c',
+    border: '1px solid #5cb85c'
+}
+
+export const successToastIconTheme = {
+    primary: '#5cb85c',
+    secondary: '#fff'
+}
+
+export const errorToastStyles = {
+    backgroundColor: '#fff',
+    color: '#d9534f',
+    border: '1px solid #d9534f'
+}
+
+export const infoToastStyles = {
+    backgroundColor: '#fff',
+    color: '#5bc0de',
+    border: '1px solid #5bc0de'
+}
+
+export const infoToastIconTheme = {
+    primary: '#5bc0de',
+    secondary: '#fff'
+}
 
 export const isAuthenticated = () => {
     return localStorage.getItem(PATHS.AUTH_KEY) ? true : false;

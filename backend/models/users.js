@@ -36,6 +36,9 @@ const User = new mongoose.Schema({
     },
     inChatWith: {
         type: mongoose.Types.ObjectId
+    },
+    notifications: {
+        type: Array
     }
 });
 
