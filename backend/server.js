@@ -12,7 +12,9 @@ const app = express();
 
 require('./config/db');
 
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false,
+}));
 app.disable("x-powered-by");
 app.use(cors());
 app.use(logger('dev'));
