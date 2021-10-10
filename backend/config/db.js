@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
-let { DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME } = process.env;
+let { DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME, MONGO_URI } = process.env;
 DB_USERNAME = DB_USERNAME ? DB_USERNAME : '';
 DB_PASSWORD = DB_PASSWORD ? `:${DB_PASSWORD}` : '';
 DB_HOST = DB_USERNAME ? `/${DB_HOST}` : DB_HOST;
-let mongoURI = `mongodb://${DB_USERNAME}${DB_PASSWORD}${DB_HOST}:${DB_PORT}/${DB_NAME}`;
+let mongoURI = MONGO_URI ? MONGO_URI : `mongodb://${DB_USERNAME}${DB_PASSWORD}${DB_HOST}:${DB_PORT}/${DB_NAME}`;
 
 const mongoConnectionOptions = {
     useCreateIndex: true,
