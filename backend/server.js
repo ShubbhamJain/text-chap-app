@@ -21,12 +21,4 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/newUser', newUserRouter);
 app.use('/user', userRouter);
 
-if (process.env.NODE_ENV === "production") {
-    app.use(express.static("../frontend/build"));
-
-    app.get("*", (req, res) => {
-        res.sendFile(path.resolve(__dirname, "frontend", "build", "index.html"));
-    });
-}
-
 module.exports = app;
