@@ -1,6 +1,8 @@
 const app = require('../server');
-const debug = require('debug')('filteraggio:server');
+const debug = require('debug')('texty:server');
 const http = require('http');
+const express = require('express');
+const path = require('path');
 const socketIO = require('../socket');
 
 const port = normalizePort(process.env.PORT || '3000');
