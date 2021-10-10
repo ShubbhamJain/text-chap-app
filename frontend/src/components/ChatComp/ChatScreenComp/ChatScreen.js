@@ -36,7 +36,7 @@ const ChatScreen = () => {
     }, []);
 
     useEffect(() => {
-        socketRef.current = io.connect('http://localhost:5000/', { transports: ['websocket'], upgrade: false });
+        socketRef.current = io.connect('https://realtexty.herokuapp.com', { transports: ['websocket'], upgrade: false });
 
         // When user logs in
         socketRef.current.emit('user-logged-in', user.id);
