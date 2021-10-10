@@ -7,6 +7,10 @@
   "scripts": {
     "server-dev": "cd backend && yarn server",
     "client-dev": "cd frontend && yarn start",
-    "dev": "concurrently \"yarn server-dev\" \"yarn client-dev\""
+    "dev": "concurrently \"yarn server-dev\" \"yarn client-dev\"",
+    "build": "cd frontend && yarn run build",
+    "install-frontend": "cd frontend && yarn",
+    "heroku-postbuild": "yarn run install-frontend && yarn run build",
+    "start": "cd backend && yarn start"
   }
 }

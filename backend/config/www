@@ -7,10 +7,6 @@ const port = normalizePort(process.env.PORT || '3000');
 
 const server = http.createServer(app);
 socketIO.attach(server, {
-    // cors: {
-    //     origin: '*',
-    //     methods: ['GET', 'POST', 'PUT', 'PATCH'],
-    // },s
     cors: {
         origin: '*',
         methods: ['GET', 'POST', 'PUT', 'PATCH'],
