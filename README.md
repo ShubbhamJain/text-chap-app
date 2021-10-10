@@ -13,7 +13,7 @@ A real-time text chating application.
 
 ## Application Demo
 The app is deployed on heroku. The link to the site is-
-texty(https://)
+texty(https://realtexty.herokuapp.com)
 
 ## Technologies
 Project is created with:
