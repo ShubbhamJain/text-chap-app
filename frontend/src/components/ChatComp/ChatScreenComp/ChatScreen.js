@@ -21,6 +21,7 @@ const ChatScreen = () => {
     const myLoggedInUsers = useRef(loggedInUsers);
     const textMessage = useRef();
     const socketRef = useRef(null);
+    const messageContainer = useRef(null);
 
     const user = getAuthInfo().user;
 
@@ -36,7 +37,8 @@ const ChatScreen = () => {
     }, []);
 
     useEffect(() => {
-        socketRef.current = io.connect('https://realtexty.herokuapp.com', { transports: ['websocket'], upgrade: false });
+        // https://realtexty.herokuapp.com
+        socketRef.current = io.connect('http://localhost:5000', { transports: ['websocket'], upgrade: false });
 
         // When user logs in
         socketRef.current.emit('user-logged-in', user.id);
@@ -159,6 +161,8 @@ const ChatScreen = () => {
             console.log(161, error);
             showToast('danger', 'Error', 'Error in chatting, please reload page.');
         });
+
+        scrollToBottom();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loggedInUsers, roomId, roomData, user]);
 
@@ -183,6 +187,10 @@ const ChatScreen = () => {
         }
         socketRef.current.emit('join room', user.id, id);
     };
+
+    const scrollToBottom = () => {
+        messageContainer.current?.scrollIntoView({ behavior: "smooth" })
+    }
 
     const sendMessage = (event) => {
         event.preventDefault();
@@ -246,7 +254,7 @@ const ChatScreen = () => {
                 <div className='row justify-content-center py-md-5 h-100'>
                     <div className='col-10 col-md-4 order-2 order-md-1 p-0 fill overflow-auto mt-2 mt-md-0 border h-100'>
                         <div className='sticky-top'>
-                            <UserInfoComp picClass='userInfoImage' profilePic={user.profilePic}
+                            <UserInfoComp picClass='userInfoImage' profilePic={`http://localhost:5000/user/profilePic/${user.profilePic}`}
                                 onClickHandler={onClickHandler} email={user.email} dropDownMenu={userDropDownMenu}
                             >
                             </UserInfoComp>
@@ -260,7 +268,7 @@ const ChatScreen = () => {
                                     loggedInUsers.map((chatUser, index) => {
                                         return chatUser.id === user.id ? null :
                                             (
-                                                <ChatUsersComp key={index} id={chatUser.id} picClass='chatUsersImg' profilePic={chatUser.profilePic}
+                                                <ChatUsersComp key={index} id={chatUser.id} picClass='chatUsersImg' profilePic={`http://localhost:5000/user/profilePic/${chatUser.profilePic}`}
                                                     firstName={chatUser.firstName} lastName={chatUser.lastName} email={chatUser.email} socketId={chatUser.socketId}
                                                     setChatUser={setChatUser} lastMessageFrom='You' lastMessage='Hello' notifications={userNotifications}
                                                 />
@@ -295,6 +303,7 @@ const ChatScreen = () => {
                                                     </div>
                                                 )) : null
                                         }
+                                        <div ref={messageContainer}></div>
                                     </div>
 
                                     <div>

@@ -2,13 +2,14 @@ import { React, useEffect, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { lANG, PATHS } from '../../config';
 import { registerCall } from '../../config/apiCalls';
-import { emailError, emailRegexCheck, firstNameError, lastNameError, passwordError, passwordRegexCheck } from '../../utils';
+import { emailError, emailRegexCheck, firstNameError, lastNameError, passwordError, passwordRegexCheck, profilepic } from '../../utils';
 import FormInput from '../FormInputComp/FormInputComp';
 import './RegisterComp.scss';
 
 const RegisterComp = () => {
     const history = useHistory();
 
+    const profilePicRef = useRef();
     const firstNameRef = useRef();
     const lastNameRef = useRef();
     const emailRef = useRef();
@@ -17,6 +18,7 @@ const RegisterComp = () => {
     const [btn, setBtn] = useState(true);
 
     const [errorMsg, setErrorMsg] = useState({
+        formFile: null,
         firstname: null,
         lastname: null,
         email: null,
@@ -29,6 +31,9 @@ const RegisterComp = () => {
 
     const inputHandler = (ref, elem) => {
         switch (elem) {
+            case 'formFile':
+                !ref.current.files[0] ? setErrorMsg({ ...errorMsg, formFile: profilepic }) : setErrorMsg({ ...errorMsg, formFile: false });;
+                break;
             case 'firstname':
                 ref.current.value.length === 0 ?
                     setErrorMsg({ ...errorMsg, firstname: firstNameError }) : setErrorMsg({ ...errorMsg, firstname: false });
@@ -51,7 +56,7 @@ const RegisterComp = () => {
     }
 
     useEffect(() => {
-        if (firstNameRef.current.value && lastNameRef.current.value && emailRegexCheck(emailRef.current.value) && passwordRegexCheck(passwordRef.current.value)) {
+        if (profilePicRef.current.files[0] && firstNameRef.current.value && lastNameRef.current.value && emailRegexCheck(emailRef.current.value) && passwordRegexCheck(passwordRef.current.value)) {
             if (Object.values(errorMsg).every(value => value === false)) {
                 setBtn(false);
             }
@@ -66,14 +71,21 @@ const RegisterComp = () => {
     const submitForm = async (event) => {
         event.preventDefault();
 
-        const body = {
-            firstName: firstNameRef.current.value,
-            lastName: lastNameRef.current.value,
-            email: emailRef.current.value,
-            password: passwordRef.current.value
+        const registerFormData = new FormData();
+
+        registerFormData.append('profilePic', profilePicRef.current.files[0]);
+        registerFormData.append('firstName', firstNameRef.current.value);
+        registerFormData.append('lastName', lastNameRef.current.value);
+        registerFormData.append('email', emailRef.current.value);
+        registerFormData.append('password', passwordRef.current.value);
+
+        const config = {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
         }
 
-        const response = await registerCall(body);
+        const response = await registerCall(registerFormData, config);
 
         if (response.error) {
             setShowFormErrorMsg(true);
@@ -91,6 +103,14 @@ const RegisterComp = () => {
                     <h3 className='mb-5 text-center'>{lANG.register.Heading}</h3>
                     <form className="form-container" onSubmit={submitForm}>
                         <section className={showFormErrorMsg ? formErrorMsgClass : 'd-none'}>{formErrorMsg}</section>
+
+                        <div className="mb-4">
+                            <label htmlFor="formFile" className="form-label">Upload profile picture</label>
+                            <input className="form-control" type="file" id="formFile" formEncType='multipart/form-data'
+                                ref={profilePicRef} onInput={() => inputHandler(profilePicRef, 'formFile')}
+                            />
+                            {errorMsg['formFile'] && <section className='text-danger'>{errorMsg['formFile']}</section>}
+                        </div>
 
                         <div className='row mb-4'>
                             <div className='col-xs-12 col-sm-6'>

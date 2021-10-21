@@ -7,7 +7,7 @@ const UserInfoComp = ({ picClass, profilePic, firstName, lastName, email, onClic
         <div className='container-fluid py-1 bg-grey'>
             <div className='d-flex flex-row align-items-center'>
                 <section className={`${picClass} me-4`}>
-                    <img className='img-fluid' src={profilePic} alt='Profile Pic' />
+                    <img className='img-fluid' style={{ objectFit: 'cover', width: '100px', height: '75px' }} src={profilePic} alt='Profile Pic' />
                 </section>
 
                 {

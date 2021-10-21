@@ -14,6 +14,7 @@ export const passwordRegexCheck = (value) => {
     return passwordRegex.test(value);
 }
 
+export const profilepic = 'Upload profile picture';
 export const firstNameError = 'Enter first name';
 export const lastNameError = 'Enter last name';
 export const emailError = 'Plase enter proper email address';

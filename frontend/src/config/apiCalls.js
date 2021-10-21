@@ -16,8 +16,8 @@ export const checkUserCall = async () => {
     }
 }
 
-export const registerCall = async (body) => {
-    const [response, error] = await api(axios.post('/newUser', body));
+export const registerCall = async (body, config) => {
+    const [response, error] = await api(axios.post('/newUser', body, config));
 
     if (error) return { error: true, ...error.response.data };
     else if (response.data.error) return { ...response.data };
