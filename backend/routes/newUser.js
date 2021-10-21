@@ -1,8 +1,6 @@
 const express = require('express');
-const fs = require('fs');
 const { validate, ValidationError } = require('express-validation');
 const jwt = require('jsonwebtoken');
-// const multer = require('multer');
 
 const User = require('../models/users');
 const { registerValidation } = require('../middleware/validation');

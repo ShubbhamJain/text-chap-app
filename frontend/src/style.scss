@@ -66,3 +66,7 @@
 .pointer:hover {
   cursor: pointer;
 }
+
+#messageContainer::-webkit-scrollbar {
+  display: none;
+}

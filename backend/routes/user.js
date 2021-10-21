@@ -1,8 +1,6 @@
 const express = require('express');
-const fs = require('fs');
 const { validate, ValidationError } = require('express-validation');
 const jwt = require('jsonwebtoken');
-const mongodb = require('mongodb');
 
 const User = require('../models/users');
 const { loginValidation } = require('../middleware/validation');

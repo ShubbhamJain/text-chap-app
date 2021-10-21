@@ -291,7 +291,7 @@ const ChatScreen = () => {
                                         </UserInfoComp>
                                     </div>
 
-                                    <div className='h-75 overflow-scroll'>
+                                    <div className='h-75 overflow-scroll' id='messageContainer'>
                                         {
                                             roomData && roomData[roomId] ?
                                                 roomData[roomId].messages.map((message, index) => (
