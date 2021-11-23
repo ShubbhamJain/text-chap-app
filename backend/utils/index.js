@@ -4,7 +4,7 @@ const multer = require('multer');
 const { GridFsStorage } = require('multer-gridfs-storage');
 
 const storage = new GridFsStorage({
-    url: 'mongodb://localhost:27017/texty',
+    url: 'mongodb+srv://realTexty:realTexty@cluster0.z8lfa.mongodb.net/texty?retryWrites=true&w=majority',
     options: { useNewUrlParser: true, useUnifiedTopology: true },
     file: (req, file) => {
         const match = ["image/png", "image/jpeg"];
