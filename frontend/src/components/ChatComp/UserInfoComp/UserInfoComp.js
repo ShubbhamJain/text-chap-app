@@ -2,16 +2,30 @@ import { React } from 'react';
 import UserInfoDropDownComp from '../UserInfoDropDownComp/UserInfoDropDownComp';
 import './UserInfoComp.scss';
 
-const UserInfoComp = ({ picClass, profilePic, firstName, lastName, email, onClickHandler, dropDownMenu, ...props }) => {
+const UserInfoComp = ({ picClass, profilePic, firstName, lastName, email, onClickHandler, dropDownMenu, toggleDetails, showDetails, detailsSelection, ...props }) => {
     return (
         <div className='container-fluid py-1 bg-grey'>
             <div className='d-flex flex-row align-items-center'>
-                <section className={`${picClass} me-4`}>
-                    <img className='img-fluid' style={{ objectFit: 'cover', width: '100px', height: '75px' }} src={profilePic} alt='Profile Pic' />
-                </section>
+                {
+                    detailsSelection ?
+                        'My profile' && showDetails ?
+                            <p className='my-4 pointer fs-5' onClick={() => toggleDetails(detailsSelection)}>{`< Go Back`}</p>
+                            :
+
+                            <section className={`${picClass} me-4 pointer`} onClick={() => toggleDetails(detailsSelection)}>
+                                <img className='img-fluid' style={{ objectFit: 'cover', width: '100px', height: '75px' }} src={profilePic} alt='Profile Pic' />
+                            </section>
+                        : 'Details' && showDetails ?
+                            <p className='my-4 pointer fs-5' onClick={() => toggleDetails(detailsSelection)}>{`< Go Back`}</p>
+                            :
+
+                            <section className={`${picClass} me-4 pointer`} onClick={() => toggleDetails(detailsSelection)}>
+                                <img className='img-fluid' style={{ objectFit: 'cover', width: '100px', height: '75px' }} src={profilePic} alt='Profile Pic' />
+                            </section>
+                }
 
                 {
-                    firstName && lastName ? <section><p className='d-inline'>{firstName} {lastName}</p></section> : null
+                    detailsSelection === 'Details' && !showDetails ? (firstName && lastName ? <section><p className='d-inline'>{firstName} {lastName}</p></section> : null) : null
                 }
 
                 <section className=' d-block ms-auto dropdown'>

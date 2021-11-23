@@ -1,6 +1,8 @@
 import { PATHS } from "../config";
 import { logoutCall } from "../config/apiCalls";
 
+export const apiUrl = process.env.NODE_ENV === 'production' ? process.env.REACT_APP_PROD_API_URL : process.env.REACT_APP_DEV_API_URL;
+
 export const errorMsgClass = 'mb-4 d-block text-danger border border-danger rounded py-2 text-center bg-danger bg-opacity-10';
 
 export const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -27,7 +29,7 @@ export const passwordError = (
     </div>
 )
 
-export const userDropDownMenu = ['Logout'];
+export const userDropDownMenu = ['My Profile', 'Logout'];
 export const chatUserDropDownMenu = ['Details'];
 
 export const successToastStyles = {

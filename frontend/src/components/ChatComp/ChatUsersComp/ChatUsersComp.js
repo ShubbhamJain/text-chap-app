@@ -7,7 +7,7 @@ const ChatUsersComp = ({ id, picClass, profilePic, firstName, lastName, email, s
                 <img className={`${picClass} me-3`} src={profilePic} alt='ProfilePic' style={{ objectFit: 'cover', width: '60px', height: '60px' }} />
                 <div className='d-flex flex-column flex-grow-1'>
                     <h5 className='mb-1'>{firstName} {lastName}</h5>
-                    <p className='m-0'>{lastMessageFrom}: {lastMessage}</p>
+                    {/* <p className='m-0'>{lastMessageFrom}: {lastMessage}</p> */}
                 </div>
 
                 {

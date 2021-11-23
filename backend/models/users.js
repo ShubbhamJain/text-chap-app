@@ -39,6 +39,9 @@ const User = new mongoose.Schema({
     },
     notifications: {
         type: Array
+    },
+    groupNotifications: {
+        type: Array
     }
 });
 
