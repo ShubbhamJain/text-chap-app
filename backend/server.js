@@ -7,6 +7,7 @@ const helmet = require('helmet');
 
 const newUserRouter = require('./routes/newUser');
 const userRouter = require('./routes/user');
+const groupRouter = require('./routes/group');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use('/newUser', newUserRouter);
 app.use('/user', userRouter);
+app.use('/group', groupRouter);
 
 if (process.env.NODE_ENV === "production") {
     app.use(express.static("../frontend/build"));

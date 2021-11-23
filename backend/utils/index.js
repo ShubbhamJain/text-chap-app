@@ -1,11 +1,34 @@
-const imgArray = [
-    'https://images.pexels.com/photos/2726111/pexels-photo-2726111.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
-    'https://t3.ftcdn.net/jpg/02/36/48/86/360_F_236488644_opXVvD367vGJTM2I7xTlsHB58DVbmtxR.jpg',
-    'http://shahjis.in/wp-content/uploads/2021/02/sun-spots.jpeg',
-    'https://images.pexels.com/photos/2078265/pexels-photo-2078265.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500',
-    'https://t3.ftcdn.net/jpg/03/67/46/48/360_F_367464887_f0w1JrL8PddfuH3P2jSPlIGjKU2BI0rn.jpg',
-];
+const crypto = require('crypto');
+const path = require('path');
+const multer = require('multer');
+const { GridFsStorage } = require('multer-gridfs-storage');
 
-const userProfilePic = () => { return imgArray[Math.floor(Math.random() * imgArray.length)]; }
+const storage = new GridFsStorage({
+    url: 'mongodb://localhost:27017/texty',
+    options: { useNewUrlParser: true, useUnifiedTopology: true },
+    file: (req, file) => {
+        const match = ["image/png", "image/jpeg"];
 
-module.exports = { userProfilePic };
+        if (match.indexOf(file.mimetype) === -1) {
+            return reject('File not supported');
+        }
+
+        return new Promise((resolve, reject) => {
+            crypto.randomBytes(16, (err, buf) => {
+                if (err) {
+                    return reject(err);
+                }
+                const filename = buf.toString('hex') + path.extname(file.originalname);
+                const fileInfo = {
+                    filename: filename,
+                    bucketName: 'uploads'
+                };
+                resolve(fileInfo);
+            });
+        });
+    }
+});
+
+const upload = multer({ storage });
+
+module.exports = { upload };

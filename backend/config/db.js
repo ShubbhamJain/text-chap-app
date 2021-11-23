@@ -16,3 +16,14 @@ const mongoConnectionOptions = {
 mongoose.connect(mongoURI, mongoConnectionOptions)
     .then(() => console.log('Connected to mongodb'))
     .catch(err => { console.log(err) });
+
+const connection = mongoose.createConnection(mongoURI, mongoConnectionOptions);
+
+let bucket;
+connection.on('open', () => {
+    bucket = new mongoose.mongo.GridFSBucket(connection.db, { bucketName: "uploads" });
+});
+
+const getBucket = () => { return bucket; }
+
+module.exports = { getBucket };

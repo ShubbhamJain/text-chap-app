@@ -5,43 +5,49 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/users');
 const { registerValidation } = require('../middleware/validation');
 const { LANG } = require('../config');
-const { userProfilePic } = require('../utils');
+const { upload } = require('../utils');
 
 const router = express.Router();
 
-router.post('/', validate(registerValidation), async (req, res) => {
-    let { firstName, lastName, email, password } = req.body;
+router.post('/', upload.single('profilePic'), validate(registerValidation), async (req, res) => {
+    try {
+        const { firstName, lastName, email, password } = req.body;
+        const { filename } = req.file;
 
-    let checkUser = await User.findOne({ email });
+        let checkUser = await User.findOne({ email });
 
-    if (checkUser) {
-        return res.json({ error: true, message: LANG.register.userCheck }).status(400);
-    }
-
-    let newUser = new User({ profilePic: userProfilePic(), firstName, lastName, email, password, loggedIn: true });
-
-    newUser.save();
-
-    jwt.sign(
-        { id: newUser._id },
-        process.env.JWT_SECRET,
-        { expiresIn: 3600 },
-        (err, token) => {
-            if (err) throw err;
-
-            res.json({
-                token,
-                user: {
-                    id: newUser.id,
-                    profilePic: newUser.profilePic,
-                    firstName: newUser.firstName,
-                    lastName: newUser.lastName,
-                    email: newUser.email,
-                    loggedIn: newUser.loggedIn
-                },
-            });
+        if (checkUser) {
+            return res.json({ error: true, message: LANG.register.userCheck }).status(400);
         }
-    )
+
+        let newUser = new User({ profilePic: filename, firstName, lastName, email, password, loggedIn: true });
+
+        newUser.save();
+
+        jwt.sign(
+            { id: newUser._id },
+            process.env.JWT_SECRET,
+            { expiresIn: 3600 },
+            (err, token) => {
+                if (err) throw err;
+
+                res.json({
+                    token,
+                    user: {
+                        id: newUser.id,
+                        profilePic: newUser.profilePic,
+                        firstName: newUser.firstName,
+                        lastName: newUser.lastName,
+                        email: newUser.email,
+                        loggedIn: newUser.loggedIn
+                    },
+                });
+            }
+        )
+    } catch (error) {
+        console.error(error);
+        res.send(error).status(500);
+    }
 });
 
 router.use((err, req, res, next) => {
