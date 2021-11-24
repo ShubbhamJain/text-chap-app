@@ -62,7 +62,7 @@ const ChatScreen = () => {
     }, []);
 
     useEffect(() => {
-        socketRef.current = io.connect(apiUrl, { transports: ['websocket'], upgrade: false });
+        socketRef.current = io.connect('https://realtexty.herokuapp.com', { transports: ['websocket'], upgrade: false });
 
         // When user logs in
         socketRef.current.emit('user-logged-in', user.id);
@@ -446,7 +446,7 @@ const ChatScreen = () => {
                 <div className='row justify-content-center py-md-5 h-100'>
                     <div className='col-10 col-md-4 order-2 order-md-1 p-0 fill overflow-auto mt-2 mt-md-0 border h-100'>
                         <div className='sticky-top'>
-                            <UserInfoComp picClass='userInfoImage' profilePic={apiUrl ? `${apiUrl}/user/profilePic/${user.profilePic}` : `/user/profilePic/${user.profilePic}`}
+                            <UserInfoComp picClass='userInfoImage' profilePic={`/user/profilePic/${user.profilePic}`}
                                 onClickHandler={onClickHandler} email={user.email} dropDownMenu={userDropDownMenu}
                                 toggleDetails={toggleDetails} showDetails={showMyDetails} detailsSelection='My profile'
                             >
@@ -464,7 +464,7 @@ const ChatScreen = () => {
 
                         {
                             showMyDetails ?
-                                <MyDetails profilePic={apiUrl ? `${apiUrl}/user/profilePic/${user.profilePic}` : `/user/profilePic/${user.profilePic}`}
+                                <MyDetails profilePic={`/user/profilePic/${user.profilePic}`}
                                     firstName={user.firstName} lastName={user.lastName} email={user.email}
                                 />
                                 :
@@ -478,7 +478,7 @@ const ChatScreen = () => {
                                                     return (
                                                         <div key={index} onClick={() => setChatGroup(grp)}>
                                                             <div className='d-flex flex-row align-items-center chatUser'>
-                                                                <img className='chatUsersImg me-3' src={apiUrl ? `${apiUrl}/group/groupImg/${grp.groupImg}` : `/group/groupImg/${grp.groupImg}`} alt='ProfilePic' style={{ objectFit: 'cover', width: '60px', height: '60px' }} />
+                                                                <img className='chatUsersImg me-3' src={`/group/groupImg/${grp.groupImg}`} alt='ProfilePic' style={{ objectFit: 'cover', width: '60px', height: '60px' }} />
                                                                 <div className='d-flex flex-column flex-grow-1'>
                                                                     <h5 className='mb-1'>{grp.name}</h5>
                                                                 </div>
@@ -509,7 +509,7 @@ const ChatScreen = () => {
                                                     return chatUser.id === user.id ? null :
                                                         (
                                                             <ChatUsersComp key={index} id={chatUser.id} picClass='chatUsersImg'
-                                                                profilePic={apiUrl ? `${apiUrl}/user/profilePic/${chatUser.profilePic}` : `/user/profilePic/${chatUser.profilePic}`}
+                                                                profilePic={`/user/profilePic/${chatUser.profilePic}`}
                                                                 firstName={chatUser.firstName} lastName={chatUser.lastName} email={chatUser.email} socketId={chatUser.socketId}
                                                                 setChatUser={setChatUser} lastMessageFrom='You' lastMessage='Hello' notifications={userNotifications}
                                                             />
@@ -525,7 +525,7 @@ const ChatScreen = () => {
                             groupInChat.length > 0 ?
                                 <>
                                     <div className='sticky-top'>
-                                        <GroupInfoComp picClass='chatUserInfoImage' groupImg={`${apiUrl}/group/groupImg/${groupInChat[0].groupImg}`}
+                                        <GroupInfoComp picClass='chatUserInfoImage' groupImg={`/group/groupImg/${groupInChat[0].groupImg}`}
                                             groupName={groupInChat[0].name} onClickHandler={onClickHandler} dropDownMenu={chatUserDropDownMenu}
                                             toggleDetails={toggleDetails} showDetails={showChatUserDetails} detailsSelection='Details'
                                         >
@@ -535,7 +535,7 @@ const ChatScreen = () => {
                                     {
                                         showChatUserDetails ?
                                             <GroupDetails
-                                                groupImg={apiUrl ? `${apiUrl}/group/groupImg/${groupInChat[0].groupImg}` : `/group/groupImg/${groupInChat[0].groupImg}`}
+                                                groupImg={`/group/groupImg/${groupInChat[0].groupImg}`}
                                                 groupName={groupInChat[0].name}
                                                 groupUsers={groupInChat[0].users}
                                             />

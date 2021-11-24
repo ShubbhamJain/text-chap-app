@@ -1,5 +1,5 @@
 import { React } from 'react';
-import { apiUrl } from '../../utils';
+// import { apiUrl } from '../../utils';
 
 const GroupDetails = ({ groupImg, groupName, groupUsers, ...props }) => {
     return (
@@ -16,7 +16,7 @@ const GroupDetails = ({ groupImg, groupName, groupUsers, ...props }) => {
                         return (
                             <div key={index}>
                                 <div className='d-flex align-items-center'>
-                                    <img className='img-fluid chatUsersImg' style={{ objectFit: 'cover', width: '75px', height: '75px' }} src={`${apiUrl}/group/groupImg/${usr.profilePic}`} alt='Profile Pic' />
+                                    <img className='img-fluid chatUsersImg' style={{ objectFit: 'cover', width: '75px', height: '75px' }} src={`/group/groupImg/${usr.profilePic}`} alt='Profile Pic' />
                                     <p className='m-0'>{usr.firstName} {usr.lastName}</p>
                                 </div>
                                 <hr className='m-0' />
