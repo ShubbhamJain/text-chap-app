@@ -1,5 +1,4 @@
 import { React } from 'react';
-// import { apiUrl } from '../../utils';
 
 const GroupDetails = ({ groupImg, groupName, groupUsers, ...props }) => {
     return (

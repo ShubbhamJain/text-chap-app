@@ -8,14 +8,11 @@ import ChatUsersComp from '../ChatUsersComp/ChatUsersComp';
 import UserInfoComp from '../UserInfoComp/UserInfoComp';
 import Toast from '../Toast/Toast';
 import toast, { Toaster } from 'react-hot-toast';
-import { apiUrl } from '../../../utils';
 import MyDetails from '../MyDetails/MyDetails';
 import GroupButton from '../Group/GroupButton';
 import { groupCall } from '../../../config/apiCalls';
 import GroupInfoComp from '../GroupInfoComp/GroupInfoComp';
 import GroupDetails from '../GroupDetails';
-
-console.log(apiUrl);
 
 const ChatScreen = () => {
     const history = useHistory();
