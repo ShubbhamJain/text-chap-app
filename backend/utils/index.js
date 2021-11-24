@@ -2,9 +2,10 @@ const crypto = require('crypto');
 const path = require('path');
 const multer = require('multer');
 const { GridFsStorage } = require('multer-gridfs-storage');
+require("dotenv").config();
 
 const storage = new GridFsStorage({
-    url: 'mongodb+srv://realTexty:realTexty@cluster0.z8lfa.mongodb.net/texty?retryWrites=true&w=majority',
+    url: process.env.MONGO_URI,
     options: { useNewUrlParser: true, useUnifiedTopology: true },
     file: (req, file) => {
         const match = ["image/png", "image/jpeg"];

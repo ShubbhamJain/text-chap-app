@@ -15,6 +15,8 @@ import { groupCall } from '../../../config/apiCalls';
 import GroupInfoComp from '../GroupInfoComp/GroupInfoComp';
 import GroupDetails from '../GroupDetails';
 
+console.log(apiUrl);
+
 const ChatScreen = () => {
     const history = useHistory();
 
