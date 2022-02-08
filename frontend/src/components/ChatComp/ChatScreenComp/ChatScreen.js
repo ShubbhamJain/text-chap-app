@@ -65,30 +65,48 @@ const ChatScreen = () => {
         socketRef.current.emit('user-logged-in', user.id);
 
         // We show logged in users in the panel to the newly logged in user
-        socketRef.current.on('logged-in-users', (loggedInUsrs, groupsOfUser) => {
+        socketRef.current.on('logged-in-users', async (loggedInUsrs, groupsOfUser) => {
             setLoggedInUsers(loggedInUsrs);
             myLoggedInUsers.current = loggedInUsrs;
 
             setUserGroups(groupsOfUser);
             myUserGroups.current = groupsOfUser;
 
-            loggedInUsrs.forEach(usr => {
-                if (usr.id === user.id) {
-                    setUserNotifications(usr.notifications);
-                    setGroupNotifications(usr.groupNotifications);
-                }
-            });
+            await Promise.all(
+                loggedInUsrs.map(async (usr) => {
+                    if (usr.id === user.id) {
+                        setUserNotifications(usr.notifications);
+                        setGroupNotifications(usr.groupNotifications);
+                    }
+                }, { concurrency: 9 }
+                )
+            );
+
+            // loggedInUsrs.forEach(usr => {
+            //     if (usr.id === user.id) {
+            //         setUserNotifications(usr.notifications);
+            //         setGroupNotifications(usr.groupNotifications);
+            //     }
+            // });
         });
 
         // When a new user logs in and joins the chat, we inform other users in chat about the new user
-        socketRef.current.on('new-logged-in-user', newLoggedInUsr => {
+        socketRef.current.on('new-logged-in-user', async (newLoggedInUsr) => {
             let found = false;
 
-            loggedInUsers.forEach(usr => {
-                if (newLoggedInUsr.id === usr.id) {
-                    return found = true;
-                }
-            });
+            await Promise.all(
+                loggedInUsers.map(async (usr) => {
+                    if (newLoggedInUsr.id === usr.id) {
+                        return found = true;
+                    }
+                }, { concurrency: 9 }
+                )
+            );
+            // loggedInUsers.forEach(usr => {
+            //     if (newLoggedInUsr.id === usr.id) {
+            //         return found = true;
+            //     }
+            // });
 
             if (found === false) {
                 setLoggedInUsers([...loggedInUsers, newLoggedInUsr]);
@@ -107,26 +125,42 @@ const ChatScreen = () => {
             setLoggedInUsers(loggedInUsrs);
         });
 
-        socketRef.current.on('room created for sender', (rId, rData, loggedInUsrs) => {
+        socketRef.current.on('room created for sender', async (rId, rData, loggedInUsrs) => {
             setLoggedInUsers(loggedInUsrs);
-            loggedInUsrs.forEach(usr => {
-                if (usr.id === user.id) {
-                    setUserNotifications(usr.notifications);
-                }
-            });
+
+            await Promise.all(
+                loggedInUsrs.map(async usr => {
+                    if (usr.id === user.id) {
+                        setUserNotifications(usr.notifications);
+                    }
+                }, { concurrency: 9 })
+            );
+            // loggedInUsrs.forEach(usr => {
+            //     if (usr.id === user.id) {
+            //         setUserNotifications(usr.notifications);
+            //     }
+            // });
 
             setRoomData({ ...roomData, [rId]: { ...rData } });
             setRoomId(rId);
         });
 
-        socketRef.current.on('room created for receiver', (receiverInChatWithId, rId, rData, loggedInUsrs) => {
+        socketRef.current.on('room created for receiver', async (receiverInChatWithId, rId, rData, loggedInUsrs) => {
             if (receiverInChatWithId !== rId) {
                 setLoggedInUsers(loggedInUsrs);
-                loggedInUsrs.forEach(usr => {
-                    if (usr.id === user.id) {
-                        setUserNotifications(usr.notifications);
-                    }
-                });
+
+                await Promise.all(
+                    loggedInUsrs.map(async usr => {
+                        if (usr.id === user.id) {
+                            setUserNotifications(usr.notifications);
+                        }
+                    }, { concurrency: 9 })
+                );
+                // loggedInUsrs.forEach(usr => {
+                //     if (usr.id === user.id) {
+                //         setUserNotifications(usr.notifications);
+                //     }
+                // });
             }
 
             if (receiverInChatWithId === rId) {
@@ -145,22 +179,37 @@ const ChatScreen = () => {
             }
         });
 
-        socketRef.current.on('message received by receiver', (receiverInChatWithId, rId, msgObj, loggedInUsrs) => {
+        socketRef.current.on('message received by receiver', async (receiverInChatWithId, rId, msgObj, loggedInUsrs) => {
             if (rId && msgObj) {
                 let usrName = '';
 
                 setLoggedInUsers(loggedInUsrs);
-                loggedInUsrs.forEach(usr => {
-                    if (usr.id === user.id && roomId !== rId) {
-                        setUserNotifications(usr.notifications);
-                    }
-                });
 
-                myLoggedInUsers.current.forEach(usr => {
-                    if (msgObj.userId === usr.id) {
-                        usrName = usr.firstName + ' ' + usr.lastName;
-                    }
-                });
+                await Promise.all(
+                    loggedInUsrs.map(async usr => {
+                        if (usr.id === user.id && roomId !== rId) {
+                            setUserNotifications(usr.notifications);
+                        }
+                    }, { concurrency: 9 })
+                );
+                // loggedInUsrs.forEach(usr => {
+                //     if (usr.id === user.id && roomId !== rId) {
+                //         setUserNotifications(usr.notifications);
+                //     }
+                // });
+
+                await Promise.all(
+                    myLoggedInUsers.current.map(async (usr) => {
+                        if (msgObj.userId === usr.id) {
+                            usrName = usr.firstName + ' ' + usr.lastName;
+                        }
+                    }, { concurrency: 9 })
+                );
+                // myLoggedInUsers.current.forEach(usr => {
+                //     if (msgObj.userId === usr.id) {
+                //         usrName = usr.firstName + ' ' + usr.lastName;
+                //     }
+                // });
 
                 if (roomId !== rId) {
                     showToast('success', `New Message From ${usrName}`, msgObj.message);
@@ -190,33 +239,52 @@ const ChatScreen = () => {
             setUserGroups(curr => [groupInfo, ...curr]);
         });
 
-        socketRef.current.on('message-sent-to-sender', (groupId, groupData) => {
+        socketRef.current.on('message-sent-to-sender', async (groupId, groupData) => {
             let group = {};
             let groups = [];
 
-            myUserGroups.current.forEach(grp => {
-                if (grp._id === groupId) {
-                    group = groupData;
-                    groups.push(groupData);
-                } else {
-                    groups.push(grp);
-                }
-            });
+            await Promise.all(
+                myUserGroups.current.map(async grp => {
+                    if (grp._id === groupId) {
+                        group = groupData;
+                        groups.push(groupData);
+                    } else {
+                        groups.push(grp);
+                    }
+                }, { concurrency: 9 })
+            );
+            // myUserGroups.current.forEach(grp => {
+            //     if (grp._id === groupId) {
+            //         group = groupData;
+            //         groups.push(groupData);
+            //     } else {
+            //         groups.push(grp);
+            //     }
+            // });
 
             setUserGroups(groups);
             setGroupInChat([group]);
         });
 
-        socketRef.current.on('message-sent-to-receivers', (usrRoomId, groupId, groupData, message) => {
+        socketRef.current.on('message-sent-to-receivers', async (usrRoomId, groupId, groupData, message) => {
             let groups = [];
 
-            myUserGroups.current.forEach(grp => {
-                if (grp._id === groupId) {
-                    groups.push(groupData);
-                } else {
-                    groups.push(grp);
-                }
-            });
+            await Promise.all(
+                myUserGroups.current.map(async grp => {
+                    if (grp._id === groupId) {
+                        groups.push(groupData);
+                    } else {
+                        groups.push(grp);
+                    }
+                }, { concurrency: 9 })
+            );
+            // myUserGroups.current.forEach(grp => {
+            //     if (grp._id === groupId) {
+            //         groups.push(groupData);
+            //     } else {
+            //         groups.push(grp);
+            //     }
+            // });
 
             setUserGroups(groups);
 
@@ -227,15 +295,26 @@ const ChatScreen = () => {
                 showToast('success', `New Message In ${groupData.name}`, `${message.userName}: ${message.message}`);
 
                 let loggedInUsrs = [];
+                const staticArray = new Array(myLoggedInUsers.current.length).fill('1');
 
-                for (let i = 0; i < myLoggedInUsers.current.length; i++) {
-                    let usr = myLoggedInUsers.current[i];
-                    if (usr.id === user.id) {
-                        usr.groupNotifications.push({ userId: message.userId, groupId: groupId });
-                        setGroupNotifications(usr.groupNotifications);
-                    }
-                    loggedInUsrs.push(usr);
-                }
+                await Promise.all(
+                    staticArray.map(async (value, i) => {
+                        let usr = myLoggedInUsers.current[i];
+                        if (usr.id === user.id) {
+                            usr.groupNotifications.push({ userId: message.userId, groupId: groupId });
+                            setGroupNotifications(usr.groupNotifications);
+                        }
+                        loggedInUsrs.push(usr);
+                    }, { concurrency: 9 })
+                );
+                // for (let i = 0; i < myLoggedInUsers.current.length; i++) {
+                //     let usr = myLoggedInUsers.current[i];
+                //     if (usr.id === user.id) {
+                //         usr.groupNotifications.push({ userId: message.userId, groupId: groupId });
+                //         setGroupNotifications(usr.groupNotifications);
+                //     }
+                //     loggedInUsrs.push(usr);
+                // }
 
                 setLoggedInUsers(loggedInUsrs);
                 myLoggedInUsers.current = loggedInUsrs;
@@ -279,23 +358,36 @@ const ChatScreen = () => {
         socketRef.current.emit('join room', user.id, id);
     }
 
-    const setChatGroup = (grpInfo) => {
+    const setChatGroup = async (grpInfo) => {
         if (grpInfo._id !== roomId) {
             setUserInChat([]);
             setRoomId(grpInfo._id);
             setGroupInChat([grpInfo]);
 
             let loggedInUsrs = [...loggedInUsers];
+            const staticArray = new Array(loggedInUsrs.length).fill('1');
 
-            for (let i = 0; i < loggedInUsrs.length; i++) {
-                let usr = loggedInUsrs[i];
-                if (usr.id === user.id) {
-                    if (usr.groupNotifications.length > 0) {
-                        usr.groupNotifications = usr.groupNotifications.filter((notif, index) => notif.groupId !== grpInfo._id);
+            await Promise.all(
+                staticArray.map(async (value, i) => {
+                    let usr = loggedInUsrs[i];
+                    if (usr.id === user.id) {
+                        if (usr.groupNotifications.length > 0) {
+                            usr.groupNotifications = usr.groupNotifications.filter((notif, index) => notif.groupId !== grpInfo._id);
+                        }
+                        setGroupNotifications(usr.groupNotifications);
                     }
-                    setGroupNotifications(usr.groupNotifications);
-                }
-            }
+                }, { concurrency: 9 })
+            );
+
+            // for (let i = 0; i < loggedInUsrs.length; i++) {
+            //     let usr = loggedInUsrs[i];
+            //     if (usr.id === user.id) {
+            //         if (usr.groupNotifications.length > 0) {
+            //             usr.groupNotifications = usr.groupNotifications.filter((notif, index) => notif.groupId !== grpInfo._id);
+            //         }
+            //         setGroupNotifications(usr.groupNotifications);
+            //     }
+            // }
 
             setLoggedInUsers(loggedInUsrs);
             myLoggedInUsers.current = loggedInUsrs;
@@ -413,11 +505,18 @@ const ChatScreen = () => {
 
                 socketRef.current.emit('create-group', response.groupInfo);
 
-                groupUserSelection.current.forEach(selection => {
-                    if (selection) {
-                        selection.checked = false;
-                    }
-                });
+                await Promise.all(
+                    groupUserSelection.current.map(async selection => {
+                        if (selection) {
+                            selection.checked = false;
+                        }
+                    }, { concurrency: 9 })
+                );
+                // groupUserSelection.current.forEach(selection => {
+                //     if (selection) {
+                //         selection.checked = false;
+                //     }
+                // });
                 setGroupUsers(curr => curr.splice(0, -1));
             }
         }

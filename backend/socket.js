@@ -15,12 +15,20 @@ io.on('connection', (socket) => {
             const groups = await Group.find({ users: { $elemMatch: { id: loggedInUserId } } });
 
             if (user && user?.active === false) {
-                loggedInUsers.forEach(usr => {
-                    if (usr.id === loggedInUserId) {
-                        usr.active = true;
-                        return usr.socketId = socket.id;
-                    }
-                });
+                await Promise.all(
+                    loggedInUsers.map(async usr => {
+                        if (usr.id === loggedInUserId) {
+                            usr.active = true;
+                            return usr.socketId = socket.id;
+                        }
+                    }, { concurrency: 9 })
+                );
+                // loggedInUsers.forEach(usr => {
+                //     if (usr.id === loggedInUserId) {
+                //         usr.active = true;
+                //         return usr.socketId = socket.id;
+                //     }
+                // });
                 await User.updateOne({ _id: loggedInUserId }, { $set: { active: true } });
                 socket.emit('logged-in-users', loggedInUsers, groups);
             }
@@ -44,11 +52,18 @@ io.on('connection', (socket) => {
                 loggedInUsers.push(obj);
                 socket.emit('logged-in-users', loggedInUsers, groups);
             } else {
-                loggedInUsers.forEach(usr => {
-                    if (usr.id === loggedInUserId) {
-                        return found = true;
-                    }
-                });
+                await Promise.all(
+                    loggedInUsers.map(async usr => {
+                        if (usr.id === loggedInUserId) {
+                            return found = true;
+                        }
+                    }, { concurrency: 9 })
+                );
+                // loggedInUsers.forEach(usr => {
+                //     if (usr.id === loggedInUserId) {
+                //         return found = true;
+                //     }
+                // });
 
                 if (found === false) {
                     loggedInUsers.push(obj);
@@ -66,11 +81,18 @@ io.on('connection', (socket) => {
             if (userId && chatUserId) {
                 let socketId;
 
-                loggedInUsers.forEach(usr => {
-                    if (usr.id === chatUserId) {
-                        socketId = usr.socketId;
-                    }
-                });
+                await Promise.all(
+                    loggedInUsers.map(async usr => {
+                        if (usr.id === chatUserId) {
+                            socketId = usr.socketId;
+                        }
+                    }, { concurrency: 9 })
+                );
+                // loggedInUsers.forEach(usr => {
+                //     if (usr.id === chatUserId) {
+                //         socketId = usr.socketId;
+                //     }
+                // });
 
                 const receiverData = await User.findById(chatUserId);
                 const receiverInChat = receiverData.inRoom ? receiverData.inRoom : '';
@@ -92,23 +114,40 @@ io.on('connection', (socket) => {
                     if (usr.notifications.indexOf(chatUserId) >= 0) {
                         await User.findByIdAndUpdate(userId, { $set: { inRoom: room.id, inChatWith: chatUserId }, $pull: { notifications: chatUserId } });
 
-                        loggedInUsers.forEach(usr => {
-                            if (usr.id === userId) {
-                                usr.inRoom = room.id;
-                                usr.inChatWith = chatUserId;
-                                usr.notifications.splice(chatUserId, 1);
-                            }
-                        });
+                        await Promise.all(
+                            loggedInUsers.map(async usr => {
+                                if (usr.id === userId) {
+                                    usr.inRoom = room.id;
+                                    usr.inChatWith = chatUserId;
+                                    usr.notifications.splice(chatUserId, 1);
+                                }
+                            }, { concurrency: 9 })
+                        );
+                        // loggedInUsers.forEach(usr => {
+                        //     if (usr.id === userId) {
+                        //         usr.inRoom = room.id;
+                        //         usr.inChatWith = chatUserId;
+                        //         usr.notifications.splice(chatUserId, 1);
+                        //     }
+                        // });
 
                     } else {
                         await User.findByIdAndUpdate(userId, { $set: { inRoom: room.id, inChatWith: chatUserId } });
 
-                        loggedInUsers.forEach(usr => {
-                            if (usr.id === userId) {
-                                usr.inRoom = room.id;
-                                usr.inChatWith = chatUserId;
-                            }
-                        });
+                        await Promise.all(
+                            loggedInUsers.map(async usr => {
+                                if (usr.id === userId) {
+                                    usr.inRoom = room.id;
+                                    usr.inChatWith = chatUserId;
+                                }
+                            }, { concurrency: 9 })
+                        );
+                        // loggedInUsers.forEach(usr => {
+                        //     if (usr.id === userId) {
+                        //         usr.inRoom = room.id;
+                        //         usr.inChatWith = chatUserId;
+                        //     }
+                        // });
                     }
 
                     socket.emit('room created for sender', room.id, roomData[room.id], loggedInUsers);
@@ -130,12 +169,20 @@ io.on('connection', (socket) => {
 
                     await User.findByIdAndUpdate(userId, { $set: { inRoom: newRoom.id, inChatWith: chatUserId } });
 
-                    loggedInUsers.forEach(usr => {
-                        if (usr.id === userId) {
-                            usr.inRoom = newRoom.id;
-                            usr.inChatWith = chatUserId;
-                        }
-                    });
+                    await Promise.all(
+                        loggedInUsers.map(async usr => {
+                            if (usr.id === userId) {
+                                usr.inRoom = newRoom.id;
+                                usr.inChatWith = chatUserId;
+                            }
+                        }, { concurrency: 9 })
+                    );
+                    // loggedInUsers.forEach(usr => {
+                    //     if (usr.id === userId) {
+                    //         usr.inRoom = newRoom.id;
+                    //         usr.inChatWith = chatUserId;
+                    //     }
+                    // });
 
                     socket.emit('room created for sender', newRoom.id, roomData[newRoom.id], loggedInUsers);
 
@@ -154,11 +201,19 @@ io.on('connection', (socket) => {
         try {
             if (message && roomID && usrId && chatUsrId) {
                 let socketId;
-                loggedInUsers.forEach(usr => {
-                    if (usr.id === chatUsrId) {
-                        socketId = usr.socketId;
-                    }
-                });
+
+                await Promise.all(
+                    loggedInUsers.map(async usr => {
+                        if (usr.id === chatUsrId) {
+                            socketId = usr.socketId;
+                        }
+                    }, { concurrency: 9 })
+                );
+                // loggedInUsers.forEach(usr => {
+                //     if (usr.id === chatUsrId) {
+                //         socketId = usr.socketId;
+                //     }
+                // });
 
                 let msgObj = { userId: usrId, message };
 
@@ -176,11 +231,18 @@ io.on('connection', (socket) => {
                     if (!receiverData.notifications.includes(usrId)) {
                         await User.findByIdAndUpdate(chatUsrId, { $push: { notifications: usrId } });
 
-                        loggedInUsers.forEach(usr => {
-                            if (usr.id === chatUsrId) {
-                                usr.notifications.push(usrId);
-                            }
-                        });
+                        await Promise.all(
+                            loggedInUsers.map(async usr => {
+                                if (usr.id === chatUsrId) {
+                                    usr.notifications.push(usrId);
+                                }
+                            }, { concurrency: 9 })
+                        );
+                        // loggedInUsers.forEach(usr => {
+                        //     if (usr.id === chatUsrId) {
+                        //         usr.notifications.push(usrId);
+                        //     }
+                        // });
                     }
                 }
 
@@ -199,17 +261,35 @@ io.on('connection', (socket) => {
         try {
             let groupUsrs = groupInfo.users;
 
-            loggedInUsers.forEach(usr => {
-                for (let i = 0; i < groupUsrs.length; i++) {
-                    if (usr.id === groupUsrs[i].id) {
-                        if (i === 0) {
-                            socket.to(usr.socketId).emit('group-created', groupInfo);
-                        } else {
-                            socket.to(usr.socketId).emit('added-to-created-group', groupInfo);
-                        }
-                    }
-                }
-            });
+            await Promise.all(
+                loggedInUsers.map(async usr => {
+                    const staticArray = new Array(groupUsrs.length).fill('1');
+
+                    await Promise.all(
+                        staticArray.map(async (value, i) => {
+                            if (usr.id === groupUsrs[i].id) {
+                                if (i === 0) {
+                                    socket.to(usr.socketId).emit('group-created', groupInfo);
+                                } else {
+                                    socket.to(usr.socketId).emit('added-to-created-group', groupInfo);
+                                }
+                            }
+                        }, { concurrency: 9 })
+                    );
+                }, { concurrency: 9 })
+            );
+
+            // loggedInUsers.forEach(usr => {
+            //     for (let i = 0; i < groupUsrs.length; i++) {
+            //         if (usr.id === groupUsrs[i].id) {
+            //             if (i === 0) {
+            //                 socket.to(usr.socketId).emit('group-created', groupInfo);
+            //             } else {
+            //                 socket.to(usr.socketId).emit('added-to-created-group', groupInfo);
+            //             }
+            //         }
+            //     }
+            // });
         } catch (error) {
             console.log(error);
             socket.emit('error in group creation', 'Error in group creation. Please reload the page and try again');
@@ -221,19 +301,36 @@ io.on('connection', (socket) => {
             await User.updateOne({ _id: userId }, { $set: { inRoom: groupId, inChatWith: groupId } });
             await User.updateOne({ _id: userId }, { $pull: { groupNotifications: { groupId: groupId } } }, { multi: true });
 
-            loggedInUsers.forEach(async (usr) => {
-                if (usr.id === userId) {
-                    usr.inRoom = groupId;
-                    usr.inChatWith = groupId;
-                    if (usr.groupNotifications.length > 0) {
-                        usr.groupNotifications.map(async (notif, index) => {
-                            if (notif.groupId === groupId) {
-                                usr.groupNotifications.splice(index, 1);
-                            }
-                        });
+            await Promise.all(
+                loggedInUsers.map(async usr => {
+                    if (usr.id === userId) {
+                        usr.inRoom = groupId;
+                        usr.inChatWith = groupId;
+                        if (usr.groupNotifications.length > 0) {
+                            await Promise.all(
+                                usr.groupNotifications.map(async (notif, index) => {
+                                    if (notif.groupId === groupId) {
+                                        usr.groupNotifications.splice(index, 1);
+                                    }
+                                }, { concurrency: 9 })
+                            );
+                        }
                     }
-                }
-            });
+                }, { concurrency: 9 })
+            );
+            // loggedInUsers.forEach(async (usr) => {
+            //     if (usr.id === userId) {
+            //         usr.inRoom = groupId;
+            //         usr.inChatWith = groupId;
+            //         if (usr.groupNotifications.length > 0) {
+            //             usr.groupNotifications.map(async (notif, index) => {
+            //                 if (notif.groupId === groupId) {
+            //                     usr.groupNotifications.splice(index, 1);
+            //                 }
+            //             });
+            //         }
+            //     }
+            // });
         } catch (error) {
             console.log(error);
             socket.emit('error in chatting', 'Error in group chatting. Please reload the page and try again');
@@ -250,28 +347,76 @@ io.on('connection', (socket) => {
 
             let group = await Group.findOne({ _id: groupId });
 
-            loggedInUsers.forEach(async (usr) => {
-                if (usr.id === userId) {
-                    socket.to(usr.socketId).emit('message-sent-to-sender', groupId, group);
-                } else {
-                    for (let i = 0; i < group.users.length; i++) {
-                        if (usr.id === group.users[i].id && usr.id !== userId) {
-                            if (usr.inRoom !== groupId) {
-                                const notificationObj = {
-                                    groupId: groupId,
-                                    userId: userId
-                                };
+            await Promise.all(
+                loggedInUsers.map(async (usr) => {
+                    if (usr.id === userId) {
+                        socket.to(usr.socketId).emit('message-sent-to-sender', groupId, group);
+                    } else {
+                        const staticArray = new Array(groupUsrs.length).fill('1');
 
-                                await User.updateOne({ _id: group.users[i].id }, { $push: { groupNotifications: notificationObj } });
+                        await Promise.all(
+                            staticArray.map(async (value, i) => {
+                                if (usr.id === group.users[i].id && usr.id !== userId) {
+                                    if (usr.inRoom !== groupId) {
+                                        const notificationObj = {
+                                            groupId: groupId,
+                                            userId: userId
+                                        };
 
-                                usr.groupNotifications.push(notificationObj);
-                            }
+                                        await User.updateOne({ _id: group.users[i].id }, { $push: { groupNotifications: notificationObj } });
 
-                            socket.to(usr.socketId).emit('message-sent-to-receivers', usr.inRoom, groupId, group, msgObj);
-                        }
+                                        usr.groupNotifications.push(notificationObj);
+                                    }
+
+                                    socket.to(usr.socketId).emit('message-sent-to-receivers', usr.inRoom, groupId, group, msgObj);
+                                }
+                            }, { concurrency: 9 })
+                        );
                     }
-                }
-            });
+                }, { concurrency: 9 })
+            );
+            // loggedInUsers.forEach(async (usr) => {
+            //     if (usr.id === userId) {
+            //         socket.to(usr.socketId).emit('message-sent-to-sender', groupId, group);
+            //     } else {
+            //         const staticArray = new Array(groupUsrs.length).fill('1');
+
+            //         await Promise.all(
+            //             staticArray.map(async (value, i) => {
+            //                 if (usr.id === group.users[i].id && usr.id !== userId) {
+            //                     if (usr.inRoom !== groupId) {
+            //                         const notificationObj = {
+            //                             groupId: groupId,
+            //                             userId: userId
+            //                         };
+
+            //                         await User.updateOne({ _id: group.users[i].id }, { $push: { groupNotifications: notificationObj } });
+
+            //                         usr.groupNotifications.push(notificationObj);
+            //                     }
+
+            //                     socket.to(usr.socketId).emit('message-sent-to-receivers', usr.inRoom, groupId, group, msgObj);
+            //                 }
+            //             }, { concurrency: 9 })
+            //         );
+            //         // for (let i = 0; i < group.users.length; i++) {
+            //         //     if (usr.id === group.users[i].id && usr.id !== userId) {
+            //         //         if (usr.inRoom !== groupId) {
+            //         //             const notificationObj = {
+            //         //                 groupId: groupId,
+            //         //                 userId: userId
+            //         //             };
+
+            //         //             await User.updateOne({ _id: group.users[i].id }, { $push: { groupNotifications: notificationObj } });
+
+            //         //             usr.groupNotifications.push(notificationObj);
+            //         //         }
+
+            //         //         socket.to(usr.socketId).emit('message-sent-to-receivers', usr.inRoom, groupId, group, msgObj);
+            //         //     }
+            //         // }
+            //     }
+            // });
         } catch (error) {
             console.log(error);
             socket.emit('error in chatting', 'Error in group chatting. Please reload the page and try again');
@@ -282,16 +427,30 @@ io.on('connection', (socket) => {
         try {
             let userLoggedOut;
             await User.updateOne({ _id: loggedOutUser.id }, { $set: { loggedIn: false, active: false }, $unset: { inRoom: '', inChatWith: '' } });
-            loggedInUsers.forEach((usr, index) => {
-                if (usr.id === loggedOutUser.id) {
-                    userLoggedOut = usr;
-                    loggedInUsers.splice(index, 1);
-                }
-            });
 
-            loggedInUsers.forEach(usr => {
-                socket.to(usr.socketId).emit('logout', userLoggedOut);
-            });
+            await Promise.all(
+                loggedInUsers.map(async (usr, index) => {
+                    if (usr.id === loggedOutUser.id) {
+                        userLoggedOut = usr;
+                        loggedInUsers.splice(index, 1);
+                    }
+                }, { concurrency: 9 })
+            );
+            // loggedInUsers.forEach((usr, index) => {
+            //     if (usr.id === loggedOutUser.id) {
+            //         userLoggedOut = usr;
+            //         loggedInUsers.splice(index, 1);
+            //     }
+            // });
+
+            await Promise.all(
+                loggedInUsers.map(async (usr) => {
+                    socket.to(usr.socketId).emit('logout', userLoggedOut);
+                }, { concurrency: 9 })
+            );
+            // loggedInUsers.forEach(usr => {
+            //     socket.to(usr.socketId).emit('logout', userLoggedOut);
+            // });
             socket.disconnect(true);
         } catch (error) {
             console.log(error);
@@ -301,24 +460,43 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         try {
-            loggedInUsers.forEach(async (usr, index) => {
-                if (usr.socketId === socket.id) {
-                    await User.updateOne({ _id: usr.id }, { $set: { active: false }, $unset: { inRoom: '', inChatWith: '' } });
-                    usr.active = false;
-                    usr.inChatWith = '';
-                    usr.inRoom = '';
-                }
-            });
+            await Promise.all(
+                loggedInUsers.map(async (usr) => {
+                    if (usr.socketId === socket.id) {
+                        await User.updateOne({ _id: usr.id }, { $set: { active: false }, $unset: { inRoom: '', inChatWith: '' } });
+                        usr.active = false;
+                        usr.inChatWith = '';
+                        usr.inRoom = '';
+                    }
+                }, { concurrency: 9 })
+            );
+            // loggedInUsers.forEach(async (usr, index) => {
+            //     if (usr.socketId === socket.id) {
+            //         await User.updateOne({ _id: usr.id }, { $set: { active: false }, $unset: { inRoom: '', inChatWith: '' } });
+            //         usr.active = false;
+            //         usr.inChatWith = '';
+            //         usr.inRoom = '';
+            //     }
+            // });
 
             setTimeout(async () => {
                 let disconnectedUser;
                 let disconnectedUserIndex;
-                loggedInUsers.forEach((usr, index) => {
-                    if (usr.socketId === socket.id && usr.active === false) {
-                        disconnectedUser = usr;
-                        disconnectedUserIndex = index;
-                    }
-                });
+
+                await Promise.all(
+                    loggedInUsers.map(async (usr, index) => {
+                        if (usr.socketId === socket.id && usr.active === false) {
+                            disconnectedUser = usr;
+                            disconnectedUserIndex = index;
+                        }
+                    }, { concurrency: 9 })
+                );
+                // loggedInUsers.forEach((usr, index) => {
+                //     if (usr.socketId === socket.id && usr.active === false) {
+                //         disconnectedUser = usr;
+                //         disconnectedUserIndex = index;
+                //     }
+                // });
 
                 if (disconnectedUser) {
                     const user = await User.findOne({ _id: disconnectedUser.id });
