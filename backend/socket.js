@@ -347,17 +347,23 @@ io.on('connection', (socket) => {
 
             let group = await Group.findOne({ _id: groupId });
 
+            console.log(group);
+
             await Promise.all(
                 loggedInUsers.map(async (usr) => {
                     if (usr.id === userId) {
+                        console.log(355);
                         socket.to(usr.socketId).emit('message-sent-to-sender', groupId, group);
                     } else {
-                        const staticArray = new Array(groupUsrs.length).fill('1');
+                        const staticArray = new Array(group.users.length).fill('1');
+                        console.log(staticArray);
 
                         await Promise.all(
                             staticArray.map(async (value, i) => {
                                 if (usr.id === group.users[i].id && usr.id !== userId) {
+                                    console.log(364);
                                     if (usr.inRoom !== groupId) {
+                                        console.log(366);
                                         const notificationObj = {
                                             groupId: groupId,
                                             userId: userId
@@ -367,6 +373,8 @@ io.on('connection', (socket) => {
 
                                         usr.groupNotifications.push(notificationObj);
                                     }
+
+                                    console.log(376, usr.inRoom, groupId, group, msgObj);
 
                                     socket.to(usr.socketId).emit('message-sent-to-receivers', usr.inRoom, groupId, group, msgObj);
                                 }
