@@ -458,7 +458,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         try {
             await Promise.all(
                 loggedInUsers.map(async (usr) => {
