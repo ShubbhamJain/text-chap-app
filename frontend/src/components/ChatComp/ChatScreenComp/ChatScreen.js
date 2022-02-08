@@ -296,12 +296,10 @@ const ChatScreen = () => {
 
                 let loggedInUsrs = [];
                 const staticArray = new Array(myLoggedInUsers.current.length).fill('1');
-                console.log(staticArray);
 
                 await Promise.all(
                     staticArray.map(async (value, i) => {
                         let usr = myLoggedInUsers.current[i];
-                        console.log(i, usr);
                         if (usr.id === user.id) {
                             usr.groupNotifications.push({ userId: message.userId, groupId: groupId });
                             setGroupNotifications(usr.groupNotifications);
